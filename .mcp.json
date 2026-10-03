@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "gemini-docs": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@google/gemini-docs-mcp"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ]
+    }
+  }
+}
