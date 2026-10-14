@@ -1,6 +1,6 @@
 {
   "name": "mh-ai-sync",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Unified bidirectional sync engine and packager for AI Coding Agents: Claude Code, Antigravity, Cursor, Windsurf, Copilot, Hermes & MCP.",
   "main": "bin/index.js",
   "bin": {
@@ -11,8 +11,10 @@
     "start": "node bin/index.js",
     "build": "node bin/index.js build",
     "sync": "node bin/index.js sync",
+    "watch": "node bin/index.js watch",
     "status": "node bin/index.js status",
-    "test": "node test.js && node test_deep.js && node test_e2e.js && node test_phase1.js && node test_phase2.js"
+    "audit": "node bin/index.js audit",
+    "test": "node test.js && node test_deep.js && node test_e2e.js && node test_phase1.js && node test_phase2.js && node test_phase3.js"
   },
   "keywords": [
     "ai-agent",

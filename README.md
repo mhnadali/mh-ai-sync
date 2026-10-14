@@ -77,7 +77,25 @@ node bin/index.js build
 node bin/index.js sync
 ```
 
-### 3. Check Sync Status & Drift Detection
+### 3. Real-Time Live Watcher (Auto-Sync)
+Keep all AI files continuously synchronized in background as you edit `mhai.config.json`:
+```bash
+node bin/index.js watch
+```
+
+### 4. Security Audit & Credential Scanner
+Scan instructions and canonical configs to ensure no API keys or tokens are leaked:
+```bash
+node bin/index.js audit
+
+# For CI/CD blocking (exits with code 1 on findings):
+node bin/index.js audit --strict
+
+# Automatically sanitize & redact secrets when building:
+node bin/index.js build --redact
+```
+
+### 5. Check Sync Status & Drift Detection
 Inspect whether any AI config has drifted or been modified manually:
 ```bash
 node bin/index.js status
@@ -86,7 +104,7 @@ node bin/index.js status
 node bin/index.js status --check
 ```
 
-### 4. Bidirectional Import from Legacy Configs
+### 6. Bidirectional Import from Legacy Configs
 Import your existing `CLAUDE.md` or `.cursorrules` files into the unified schema:
 ```bash
 # Import from Claude Code configuration

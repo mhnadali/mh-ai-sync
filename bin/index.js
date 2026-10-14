@@ -6,6 +6,8 @@ const { DEFAULT_CANONICAL_SCHEMA } = require('../src/schema');
 const { parseClaudeMd, parseAgentsMd, parseCursorRules } = require('../src/parsers');
 const { detectStack } = require('../src/detectors');
 const { checkStatus, formatStatusReport } = require('../src/status');
+const { auditConfig, formatAuditReport, redactSecrets } = require('../src/security');
+const { startWatcher } = require('../src/watcher');
 const {
   sanitize,
   generateClaudeMd,
@@ -51,7 +53,6 @@ function init() {
 function loadConfig() {
   const targetPath = path.join(CWD, CONFIG_FILE);
   if (!fs.existsSync(targetPath)) {
-    // Attempt auto-import from existing CLAUDE.md or AGENTS.md
     if (fs.existsSync(path.join(CWD, 'CLAUDE.md'))) {
       log('Detected CLAUDE.md! Auto-importing into canonical format...');
       importFrom('claude');
@@ -114,33 +115,37 @@ function importFrom(sourceType) {
   log(`Imported and merged rules from ${sourceType.toUpperCase()} into ${CONFIG_FILE}`);
 }
 
-function build() {
+function build(redact = false) {
   const config = loadConfig();
 
+  function processContent(content) {
+    return redact ? redactSecrets(content) : content;
+  }
+
   // 1. CLAUDE.md (Claude Code)
-  fs.writeFileSync(path.join(CWD, 'CLAUDE.md'), generateClaudeMd(config), 'utf-8');
+  fs.writeFileSync(path.join(CWD, 'CLAUDE.md'), processContent(generateClaudeMd(config)), 'utf-8');
   log('✔ Synchronized -> CLAUDE.md (Claude Code)');
 
   // 2. AGENTS.md (Universal Standard & Hermes / Aider)
-  fs.writeFileSync(path.join(CWD, 'AGENTS.md'), generateAgentsMd(config), 'utf-8');
+  fs.writeFileSync(path.join(CWD, 'AGENTS.md'), processContent(generateAgentsMd(config)), 'utf-8');
   log('✔ Synchronized -> AGENTS.md (Universal Standard / Hermes / Aider)');
 
   // 3. ANTIGRAVITY.md / GEMINI.md (Antigravity context)
-  fs.writeFileSync(path.join(CWD, 'ANTIGRAVITY.md'), generateAntigravityConfig(config), 'utf-8');
+  fs.writeFileSync(path.join(CWD, 'ANTIGRAVITY.md'), processContent(generateAntigravityConfig(config)), 'utf-8');
   log('✔ Synchronized -> ANTIGRAVITY.md (Google Antigravity)');
 
   // 4. .cursorrules (Cursor IDE)
-  fs.writeFileSync(path.join(CWD, '.cursorrules'), generateCursorRules(config), 'utf-8');
+  fs.writeFileSync(path.join(CWD, '.cursorrules'), processContent(generateCursorRules(config)), 'utf-8');
   log('✔ Synchronized -> .cursorrules (Cursor IDE)');
 
   // 5. .windsurfrules (Windsurf Cascade)
-  fs.writeFileSync(path.join(CWD, '.windsurfrules'), generateWindsurfRules(config), 'utf-8');
+  fs.writeFileSync(path.join(CWD, '.windsurfrules'), processContent(generateWindsurfRules(config)), 'utf-8');
   log('✔ Synchronized -> .windsurfrules (Windsurf)');
 
   // 6. .github/copilot-instructions.md (GitHub Copilot)
   const githubDir = path.join(CWD, '.github');
   if (!fs.existsSync(githubDir)) fs.mkdirSync(githubDir, { recursive: true });
-  fs.writeFileSync(path.join(githubDir, 'copilot-instructions.md'), generateCopilotInstructions(config), 'utf-8');
+  fs.writeFileSync(path.join(githubDir, 'copilot-instructions.md'), processContent(generateCopilotInstructions(config)), 'utf-8');
   log('✔ Synchronized -> .github/copilot-instructions.md (Copilot)');
 
   // 7. .mcp.json (MCP Protocols & Tools)
@@ -152,7 +157,7 @@ function build() {
   if (!fs.existsSync(cursorRulesDir)) fs.mkdirSync(cursorRulesDir, { recursive: true });
   const mdcFiles = generateCursorMdcRules(config);
   for (const [filename, content] of Object.entries(mdcFiles)) {
-    fs.writeFileSync(path.join(cursorRulesDir, filename), content, 'utf-8');
+    fs.writeFileSync(path.join(cursorRulesDir, filename), processContent(content), 'utf-8');
   }
   log(`✔ Synchronized -> .cursor/rules/ (${Object.keys(mdcFiles).length} modular MDC rules)`);
 
@@ -162,7 +167,7 @@ function build() {
     const fullSkillPath = path.join(CWD, relPath);
     const skillDir = path.dirname(fullSkillPath);
     if (!fs.existsSync(skillDir)) fs.mkdirSync(skillDir, { recursive: true });
-    fs.writeFileSync(fullSkillPath, content, 'utf-8');
+    fs.writeFileSync(fullSkillPath, processContent(content), 'utf-8');
   }
   log(`✔ Synchronized -> skills/ (${Object.keys(skillFiles).length} modular Agent skills)`);
 
@@ -179,9 +184,27 @@ function status(checkOnly = false) {
   }
 }
 
+function audit(strict = false) {
+  const config = loadConfig();
+  const auditResult = auditConfig(config, CWD);
+  console.log(formatAuditReport(auditResult));
+
+  if (strict && !auditResult.isSecure) {
+    process.exit(1);
+  }
+}
+
+function watch() {
+  log('Starting real-time live synchronization watcher...', "\x1b[36m");
+  build();
+  startWatcher(CWD, () => {
+    build();
+  });
+}
+
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v1.2.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v1.3.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
@@ -199,12 +222,16 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                - .windsurfrules (Windsurf)
                - .github/copilot-instructions.md (GitHub Copilot)
                - .mcp.json (Model Context Protocol)
+  \x1b[32mwatch\x1b[0m        Start real-time live watcher to auto-sync on file changes
   \x1b[32mstatus\x1b[0m (diff) Check synchronization status and detect rule drift
+  \x1b[32maudit\x1b[0m (lint)  Scan instructions for exposed API keys, tokens & credentials
   \x1b[32mimport <src>\x1b[0m  Import from 'claude', 'cursor', or 'agents' into mhai.config.json
   \x1b[32mhelp\x1b[0m          Show this help menu
 
 \x1b[1mOPTIONS:\x1b[0m
   --check      When running 'status', exit with code 1 if drift or missing files detected
+  --strict     When running 'audit', exit with code 1 if any credentials are found
+  --redact     When running 'build', automatically redact detected secrets
 `);
 }
 
@@ -217,11 +244,18 @@ switch (command) {
     break;
   case 'build':
   case 'sync':
-    build();
+    build(args.includes('--redact'));
+    break;
+  case 'watch':
+    watch();
     break;
   case 'status':
   case 'diff':
     status(args.includes('--check'));
+    break;
+  case 'audit':
+  case 'lint':
+    audit(args.includes('--strict'));
     break;
   case 'import':
     importFrom(args[1] || 'claude');
