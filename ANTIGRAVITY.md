@@ -18,4 +18,6 @@ Description: Multi-agent context-aware codebase configured via M.H. AI Sync.
 
 ## Skills Available
 - **git-workflow**: Handles repository staging, commits, and branch management safely.
+  Handles repository staging, commits, and branch management safely.
 - **test-runner**: Executes test suites and parses error stack traces.
+  Executes test suites and parses error stack traces.

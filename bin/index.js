@@ -12,6 +12,8 @@ const {
   generateAgentsMd,
   generateAntigravityConfig,
   generateCursorRules,
+  generateCursorMdcRules,
+  generateSkillFiles,
   generateWindsurfRules,
   generateCopilotInstructions,
   generateMcpConfig
@@ -145,6 +147,25 @@ function build() {
   fs.writeFileSync(path.join(CWD, '.mcp.json'), generateMcpConfig(config), 'utf-8');
   log('✔ Synchronized -> .mcp.json (MCP Protocols & Tools)');
 
+  // 8. .cursor/rules/*.mdc (Modern Cursor 2.0 Rules)
+  const cursorRulesDir = path.join(CWD, '.cursor', 'rules');
+  if (!fs.existsSync(cursorRulesDir)) fs.mkdirSync(cursorRulesDir, { recursive: true });
+  const mdcFiles = generateCursorMdcRules(config);
+  for (const [filename, content] of Object.entries(mdcFiles)) {
+    fs.writeFileSync(path.join(cursorRulesDir, filename), content, 'utf-8');
+  }
+  log(`✔ Synchronized -> .cursor/rules/ (${Object.keys(mdcFiles).length} modular MDC rules)`);
+
+  // 9. skills/*/SKILL.md (Antigravity & Hermes Modular Skills)
+  const skillFiles = generateSkillFiles(config);
+  for (const [relPath, content] of Object.entries(skillFiles)) {
+    const fullSkillPath = path.join(CWD, relPath);
+    const skillDir = path.dirname(fullSkillPath);
+    if (!fs.existsSync(skillDir)) fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(fullSkillPath, content, 'utf-8');
+  }
+  log(`✔ Synchronized -> skills/ (${Object.keys(skillFiles).length} modular Agent skills)`);
+
   log('\n✨ [M.H. AI Sync] All AI Agents and Coding assistants are fully aligned!', "\x1b[36m");
 }
 
@@ -160,7 +181,7 @@ function status(checkOnly = false) {
 
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v1.1.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v1.2.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
@@ -172,7 +193,9 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                - CLAUDE.md (Claude Code)
                - AGENTS.md (Hermes, Aider, Open Standard)
                - ANTIGRAVITY.md (Google Antigravity)
-               - .cursorrules (Cursor IDE)
+               - .cursorrules (Legacy Cursor IDE)
+               - .cursor/rules/*.mdc (Modern Cursor 2.0 Modular Rules)
+               - skills/*/SKILL.md (Antigravity & Hermes Modular Skills)
                - .windsurfrules (Windsurf)
                - .github/copilot-instructions.md (GitHub Copilot)
                - .mcp.json (Model Context Protocol)

@@ -26,6 +26,10 @@ Modern AI software development suffers from **"Rule Drift"** and fragmented cont
 ## 🌟 Features
 
 - ⚡ **Single Source of Truth:** Centralize project overview, tech stack, build/test scripts, agent safety directives, and skills in a clean JSON schema.
+- 🎯 **Modern Cursor 2.0 (`.cursor/rules/*.mdc`):** Generates modular Cursor rules with scoped file glob matching (`globs`), descriptions, and `alwaysApply` flags.
+- 🌌 **Antigravity & Hermes Skills Packager:** Compiles modular skills into standard `skills/<skill>/SKILL.md` packages with structured YAML frontmatter.
+- 🔍 **Stack Auto-Detector:** Automatically inspects project workspace to configure Node.js, Python, Rust, Go, frameworks, and commands.
+- 📊 **Drift Detection & CI/CD Status:** Easily audit whether manual changes broke synchronization (`node bin/index.js status --check`).
 - 🔄 **Bidirectional Migration:** Effortlessly import existing legacy `CLAUDE.md` or `.cursorrules` into a canonical format without losing guidelines or commands.
 - 🛡 **Defensive & Fault-Tolerant:** Built with robust sanitization and regex parsing that gracefully handles malformed inputs, corrupted files, and sparse structures.
 - 🔌 **Native Model Context Protocol (MCP) Integration:** Auto-compiles `.mcp.json` tool declarations alongside project context.
@@ -41,7 +45,14 @@ Modern AI software development suffers from **"Rule Drift"** and fragmented cont
 ├── CLAUDE.md                     # Target: Claude Code CLI
 ├── AGENTS.md                     # Target: Universal Standard (Hermes, Aider, etc.)
 ├── ANTIGRAVITY.md                # Target: Google Antigravity & Agent Runtimes
-├── .cursorrules                  # Target: Cursor IDE
+├── .cursorrules                  # Target: Legacy Cursor IDE
+├── .cursor/
+│   └── rules/                    # Target: Modern Cursor 2.0 Rules
+│       ├── project-rules.mdc
+│       └── *.mdc (scoped domain rules)
+├── skills/                       # Target: Antigravity & Hermes Modular Skills
+│   └── <skill-name>/
+│       └── SKILL.md
 ├── .windsurfrules                # Target: Windsurf Cascade
 ├── .github/
 │   └── copilot-instructions.md   # Target: GitHub Copilot

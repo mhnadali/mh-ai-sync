@@ -1,6 +1,7 @@
 /**
  * M.H. AI Sync - Status & Drift Detection Engine
- * Inspects all AI agent files on disk and compares them against the canonical specification.
+ * Inspects all AI agent files on disk (both single-file and modular directories)
+ * and compares them against the canonical specification.
  */
 
 const fs = require('fs');
@@ -10,6 +11,8 @@ const {
   generateAgentsMd,
   generateAntigravityConfig,
   generateCursorRules,
+  generateCursorMdcRules,
+  generateSkillFiles,
   generateWindsurfRules,
   generateCopilotInstructions,
   generateMcpConfig
@@ -21,29 +24,46 @@ function normalizeContent(str) {
 }
 
 function checkStatus(config, rootDir = process.cwd()) {
-  const targets = [
-    { name: 'CLAUDE.md', generator: generateClaudeMd },
-    { name: 'AGENTS.md', generator: generateAgentsMd },
-    { name: 'ANTIGRAVITY.md', generator: generateAntigravityConfig },
-    { name: '.cursorrules', generator: generateCursorRules },
-    { name: '.windsurfrules', generator: generateWindsurfRules },
-    { name: path.join('.github', 'copilot-instructions.md'), generator: generateCopilotInstructions },
-    { name: '.mcp.json', generator: generateMcpConfig }
+  const fileTargets = [
+    { name: 'CLAUDE.md', expected: normalizeContent(generateClaudeMd(config)) },
+    { name: 'AGENTS.md', expected: normalizeContent(generateAgentsMd(config)) },
+    { name: 'ANTIGRAVITY.md', expected: normalizeContent(generateAntigravityConfig(config)) },
+    { name: '.cursorrules', expected: normalizeContent(generateCursorRules(config)) },
+    { name: '.windsurfrules', expected: normalizeContent(generateWindsurfRules(config)) },
+    { name: path.join('.github', 'copilot-instructions.md'), expected: normalizeContent(generateCopilotInstructions(config)) },
+    { name: '.mcp.json', expected: normalizeContent(generateMcpConfig(config)) }
   ];
+
+  // Add Modular Cursor MDC Rules
+  const mdcRules = generateCursorMdcRules(config);
+  for (const [filename, content] of Object.entries(mdcRules)) {
+    fileTargets.push({
+      name: path.join('.cursor', 'rules', filename),
+      expected: normalizeContent(content)
+    });
+  }
+
+  // Add Antigravity & Hermes Skills
+  const skillFiles = generateSkillFiles(config);
+  for (const [relPath, content] of Object.entries(skillFiles)) {
+    fileTargets.push({
+      name: relPath,
+      expected: normalizeContent(content)
+    });
+  }
 
   const results = [];
   let hasDrift = false;
   let hasMissing = false;
 
-  for (const target of targets) {
+  for (const target of fileTargets) {
     const fullPath = path.join(rootDir, target.name);
-    const expected = normalizeContent(target.generator(config));
 
     if (!fs.existsSync(fullPath)) {
       results.push({
         file: target.name,
         status: 'MISSING',
-        diffLines: expected.split('\n').length
+        diffLines: target.expected.split('\n').length
       });
       hasMissing = true;
       continue;
@@ -51,16 +71,15 @@ function checkStatus(config, rootDir = process.cwd()) {
 
     const actual = normalizeContent(fs.readFileSync(fullPath, 'utf8'));
 
-    if (actual === expected) {
+    if (actual === target.expected) {
       results.push({
         file: target.name,
         status: 'IN_SYNC'
       });
     } else {
       hasDrift = true;
-      // Calculate a brief diff summary
       const actualLines = actual.split('\n');
-      const expectedLines = expected.split('\n');
+      const expectedLines = target.expected.split('\n');
       const diffCount = Math.abs(actualLines.length - expectedLines.length);
 
       results.push({
@@ -103,7 +122,7 @@ function formatStatusReport(statusReport) {
 
   lines.push('\n----------------------------------------');
   if (statusReport.isClean) {
-    lines.push('\x1b[32m✨ All AI agent contexts are fully synchronized with source of truth.\x1b[0m');
+    lines.push('\x1b[32m✨ All AI agent contexts (single & modular) are fully synchronized.\x1b[0m');
   } else {
     lines.push('\x1b[33m⚠️ Synchronization drift detected! Run `node bin/index.js build` to re-align.\x1b[0m');
   }

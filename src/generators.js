@@ -1,5 +1,5 @@
 /**
- * M.H. AI Sync - Generators with Defensive Null-safety
+ * M.H. AI Sync - Generators with Defensive Null-safety & Multi-Directory Modules
  */
 
 function sanitize(rawConfig) {
@@ -8,6 +8,28 @@ function sanitize(rawConfig) {
   const guidelines = (config.guidelines && typeof config.guidelines === 'object' && !Array.isArray(config.guidelines)) ? config.guidelines : {};
   const commands = (config.commands && typeof config.commands === 'object' && !Array.isArray(config.commands)) ? config.commands : {};
   const mcpServers = (config.mcpServers && typeof config.mcpServers === 'object' && !Array.isArray(config.mcpServers)) ? config.mcpServers : {};
+
+  const skills = Array.isArray(config.skills)
+    ? config.skills
+        .filter(s => s && typeof s === 'object' && typeof s.name === 'string')
+        .map(s => ({
+          name: s.name.trim(),
+          description: typeof s.description === 'string' ? s.description.trim() : 'General capability',
+          instructions: typeof s.instructions === 'string' ? s.instructions.trim() : (typeof s.description === 'string' ? s.description.trim() : 'Follow standard project conventions.')
+        }))
+    : [];
+
+  const modularRules = Array.isArray(config.modularRules)
+    ? config.modularRules
+        .filter(r => r && typeof r === 'object' && typeof r.name === 'string')
+        .map(r => ({
+          name: r.name.trim(),
+          description: typeof r.description === 'string' ? r.description.trim() : 'Modular rule',
+          globs: typeof r.globs === 'string' ? r.globs.trim() : '*',
+          alwaysApply: typeof r.alwaysApply === 'boolean' ? r.alwaysApply : true,
+          rules: Array.isArray(r.rules) ? r.rules.filter(x => typeof x === 'string') : []
+        }))
+    : [];
 
   return {
     project: {
@@ -24,8 +46,9 @@ function sanitize(rawConfig) {
       gitPractices: Array.isArray(guidelines.gitPractices) ? guidelines.gitPractices.filter(x => typeof x === 'string') : [],
       agentRules: Array.isArray(guidelines.agentRules) ? guidelines.agentRules.filter(x => typeof x === 'string') : []
     },
-    skills: Array.isArray(config.skills) ? config.skills.filter(s => s && typeof s === 'object') : [],
-    mcpServers: mcpServers,
+    skills,
+    modularRules,
+    mcpServers,
     settings: {
       strategy: config.settings?.strategy === 'reference' ? 'reference' : 'compile'
     }
@@ -46,6 +69,15 @@ function generateClaudeMd(rawConfig) {
   const codeStyleList = config.guidelines.codeStyle.length ? config.guidelines.codeStyle.map(s => `- ${s}`).join('\n') : '- Follow standard clean code principles.';
   const agentRulesList = config.guidelines.agentRules.length ? config.guidelines.agentRules.map(r => `- ${r}`).join('\n') : '- Preserve existing code conventions and tests.';
 
+  let modularSection = '';
+  if (config.modularRules.length > 0) {
+    modularSection = `\n## Modular Scoped Rules\n` + config.modularRules.map(r => {
+      const header = `### ${r.name} (globs: \`${r.globs}\`)\n> ${r.description}`;
+      const rules = r.rules.map(rule => `- ${rule}`).join('\n');
+      return `${header}\n${rules}`;
+    }).join('\n\n') + '\n';
+  }
+
   return `# Claude Code Configuration (${config.project.name})
 
 ## Overview
@@ -65,7 +97,7 @@ ${codeStyleList}
 
 ## Agent Guidelines & Critical Rules
 ${agentRulesList}
-`;
+${modularSection}`;
 }
 
 function generateAgentsMd(rawConfig) {
@@ -74,6 +106,15 @@ function generateAgentsMd(rawConfig) {
   const codeStyleList = config.guidelines.codeStyle.length ? config.guidelines.codeStyle.map(s => `- ${s}`).join('\n') : '- Standard Clean Code principles';
   const gitPracticesList = config.guidelines.gitPractices.length ? config.guidelines.gitPractices.map(g => `- ${g}`).join('\n') : '- Use conventional commits';
   const agentRulesList = config.guidelines.agentRules.length ? config.guidelines.agentRules.map(r => `- ${r}`).join('\n') : '- Write safe, tested, and maintainable code';
+
+  let modularSection = '';
+  if (config.modularRules.length > 0) {
+    modularSection = `\n## Scoped Domain Policies\n` + config.modularRules.map(r => {
+      const header = `### ${r.name} (applies to: \`${r.globs}\`)\n_${r.description}_`;
+      const rules = r.rules.map(rule => `- ${rule}`).join('\n');
+      return `${header}\n${rules}`;
+    }).join('\n\n') + '\n';
+  }
 
   return `# AGENTS.md - Universal Agent Context Standard
 
@@ -95,14 +136,14 @@ ${gitPracticesList}
 
 ### Agent Constraints
 ${agentRulesList}
-`;
+${modularSection}`;
 }
 
 function generateAntigravityConfig(rawConfig) {
   const config = sanitize(rawConfig);
   const cmdList = Object.keys(config.commands).length ? Object.entries(config.commands).map(([cmd, script]) => `- Task [${cmd}]: \`${script}\``).join('\n') : '- No standard tasks defined.';
   const agentRulesList = config.guidelines.agentRules.length ? config.guidelines.agentRules.map(r => `- DIRECTIVE: ${r}`).join('\n') : '- DIRECTIVE: Follow workspace safety guidelines.';
-  const skillsList = config.skills.length ? config.skills.map(s => `- **${s.name}**: ${s.description}`).join('\n') : '- General developer capabilities';
+  const skillsList = config.skills.length ? config.skills.map(s => `- **${s.name}**: ${s.description}\n  ${s.instructions}`).join('\n') : '- General developer capabilities';
 
   return `# Google Antigravity & Hermes Context
 
@@ -139,6 +180,72 @@ ${codeStyleList}
 ## Common Commands
 ${cmdList}
 `;
+}
+
+function generateCursorMdcRules(rawConfig) {
+  const config = sanitize(rawConfig);
+  const files = {};
+
+  // 1. General project rules
+  const generalRules = [
+    ...config.guidelines.agentRules,
+    ...config.guidelines.codeStyle
+  ];
+  const generalBody = generalRules.length > 0 ? generalRules.map(r => `- ${r}`).join('\n') : '- Follow standard clean code conventions.';
+
+  files['project-rules.mdc'] = `---
+description: Universal project conventions and coding standards
+globs: *
+alwaysApply: true
+---
+
+# Project Conventions
+${generalBody}
+`;
+
+  // 2. Modular Scoped Rules
+  for (const rule of config.modularRules) {
+    const filename = `${rule.name}.mdc`;
+    const ruleItems = rule.rules.length > 0 ? rule.rules.map(r => `- ${r}`).join('\n') : '- Maintain strict consistency with project specifications.';
+
+    files[filename] = `---
+description: ${rule.description}
+globs: ${rule.globs}
+alwaysApply: ${rule.alwaysApply}
+---
+
+# ${rule.name}
+> ${rule.description}
+
+## Rules
+${ruleItems}
+`;
+  }
+
+  return files;
+}
+
+function generateSkillFiles(rawConfig) {
+  const config = sanitize(rawConfig);
+  const files = {};
+
+  for (const skill of config.skills) {
+    const filePath = `skills/${skill.name}/SKILL.md`;
+    files[filePath] = `---
+name: ${skill.name}
+description: ${skill.description}
+---
+
+# ${skill.name}
+
+> ${skill.description}
+
+## Instructions
+${skill.instructions}
+`;
+  }
+
+  return files;
 }
 
 function generateWindsurfRules(rawConfig) {
@@ -183,6 +290,8 @@ module.exports = {
   generateAgentsMd,
   generateAntigravityConfig,
   generateCursorRules,
+  generateCursorMdcRules,
+  generateSkillFiles,
   generateWindsurfRules,
   generateCopilotInstructions,
   generateMcpConfig

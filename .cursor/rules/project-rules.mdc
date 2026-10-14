@@ -1,0 +1,13 @@
+---
+description: Universal project conventions and coding standards
+globs: *
+alwaysApply: true
+---
+
+# Project Conventions
+- Preserve existing comments and docstrings.
+- Always verify syntax and run test suites before finalizing changes.
+- Prefer minimal and surgical edits over rewriting entire files.
+- Follow Clean Code and DRY principles.
+- Write type-safe and self-documenting code with descriptive naming.
+- Keep functions focused on a single responsibility.

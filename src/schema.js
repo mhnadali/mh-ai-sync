@@ -36,11 +36,36 @@ const DEFAULT_CANONICAL_SCHEMA = {
   skills: [
     {
       name: "git-workflow",
-      description: "Handles repository staging, commits, and branch management safely."
+      description: "Handles repository staging, commits, and branch management safely.",
+      instructions: "Always inspect git status before staging. Write descriptive, conventional commit messages."
     },
     {
       name: "test-runner",
-      description: "Executes test suites and parses error stack traces."
+      description: "Executes test suites and parses error stack traces.",
+      instructions: "Run project tests, parse failure stack traces, and verify fixes without regressions."
+    }
+  ],
+  modularRules: [
+    {
+      name: "code-standards",
+      description: "Core coding guidelines and clean code practices",
+      globs: "*",
+      alwaysApply: true,
+      rules: [
+        "Follow Clean Code and DRY principles.",
+        "Write type-safe and self-documenting code with descriptive naming.",
+        "Keep functions focused on a single responsibility."
+      ]
+    },
+    {
+      name: "testing-policy",
+      description: "Automated test writing and verification rules",
+      globs: "**/*.{test,spec}.*",
+      alwaysApply: false,
+      rules: [
+        "Ensure unit tests cover happy paths and edge cases.",
+        "Do not leave failing tests before committing code."
+      ]
     }
   ],
   mcpServers: {
