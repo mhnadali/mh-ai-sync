@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const { DEFAULT_CANONICAL_SCHEMA } = require('../src/schema');
 const { parseClaudeMd, parseAgentsMd, parseCursorRules } = require('../src/parsers');
+const { detectStack } = require('../src/detectors');
+const { checkStatus, formatStatusReport } = require('../src/status');
 const {
   sanitize,
   generateClaudeMd,
@@ -28,7 +30,19 @@ function init() {
     log(`Configuration file already exists at ${CONFIG_FILE}`, "\x1b[33m");
     return;
   }
-  fs.writeFileSync(targetPath, JSON.stringify(DEFAULT_CANONICAL_SCHEMA, null, 2), 'utf-8');
+
+  // Auto-detect project stack
+  log('Analyzing workspace repository stack...');
+  const detected = detectStack(CWD);
+  const initialSchema = JSON.parse(JSON.stringify(DEFAULT_CANONICAL_SCHEMA));
+
+  initialSchema.project.name = detected.name;
+  initialSchema.project.overview = detected.overview;
+  initialSchema.project.techStack = detected.techStack;
+  initialSchema.commands = { ...initialSchema.commands, ...detected.commands };
+
+  log(`Auto-detected stack: ${detected.techStack.join(', ')}`, "\x1b[36m");
+  fs.writeFileSync(targetPath, JSON.stringify(initialSchema, null, 2), 'utf-8');
   log(`Initialized canonical configuration file -> ${CONFIG_FILE}`);
 }
 
@@ -134,16 +148,26 @@ function build() {
   log('\n✨ [M.H. AI Sync] All AI Agents and Coding assistants are fully aligned!', "\x1b[36m");
 }
 
+function status(checkOnly = false) {
+  const config = loadConfig();
+  const report = checkStatus(config, CWD);
+  console.log(formatStatusReport(report));
+
+  if (checkOnly && !report.isClean) {
+    process.exit(1);
+  }
+}
+
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v1.1.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
-  node bin/index.js <command>
+  node bin/index.js <command> [options]
 
 \x1b[1mCOMMANDS:\x1b[0m
-  \x1b[32minit\x1b[0m         Create initial mhai.config.json
+  \x1b[32minit\x1b[0m         Auto-detect project stack & create customized mhai.config.json
   \x1b[32mbuild\x1b[0m (sync)  Compile canonical config into all AI formats:
                - CLAUDE.md (Claude Code)
                - AGENTS.md (Hermes, Aider, Open Standard)
@@ -152,8 +176,12 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                - .windsurfrules (Windsurf)
                - .github/copilot-instructions.md (GitHub Copilot)
                - .mcp.json (Model Context Protocol)
+  \x1b[32mstatus\x1b[0m (diff) Check synchronization status and detect rule drift
   \x1b[32mimport <src>\x1b[0m  Import from 'claude', 'cursor', or 'agents' into mhai.config.json
   \x1b[32mhelp\x1b[0m          Show this help menu
+
+\x1b[1mOPTIONS:\x1b[0m
+  --check      When running 'status', exit with code 1 if drift or missing files detected
 `);
 }
 
@@ -167,6 +195,10 @@ switch (command) {
   case 'build':
   case 'sync':
     build();
+    break;
+  case 'status':
+  case 'diff':
+    status(args.includes('--check'));
     break;
   case 'import':
     importFrom(args[1] || 'claude');

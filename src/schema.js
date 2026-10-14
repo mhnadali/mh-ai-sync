@@ -52,6 +52,9 @@ const DEFAULT_CANONICAL_SCHEMA = {
       command: "npx",
       args: ["-y", "@modelcontextprotocol/server-filesystem", "."]
     }
+  },
+  settings: {
+    strategy: "compile" // "compile" (generate full file) or "reference" (e.g. @AGENTS.md transclusion)
   }
 };
 

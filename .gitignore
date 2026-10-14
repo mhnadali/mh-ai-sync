@@ -1,5 +1,7 @@
 node_modules/
 test_sandbox/
+test_phase1_sandbox/
 *.log
 .DS_Store
 Thumbs.db
+mh-persian-writer/

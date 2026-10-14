@@ -25,12 +25,22 @@ function sanitize(rawConfig) {
       agentRules: Array.isArray(guidelines.agentRules) ? guidelines.agentRules.filter(x => typeof x === 'string') : []
     },
     skills: Array.isArray(config.skills) ? config.skills.filter(s => s && typeof s === 'object') : [],
-    mcpServers: mcpServers
+    mcpServers: mcpServers,
+    settings: {
+      strategy: config.settings?.strategy === 'reference' ? 'reference' : 'compile'
+    }
   };
 }
 
 function generateClaudeMd(rawConfig) {
   const config = sanitize(rawConfig);
+  if (config.settings.strategy === 'reference') {
+    return `# Claude Code Configuration (${config.project.name})
+
+@AGENTS.md
+`;
+  }
+
   const techStackList = config.project.techStack.length ? config.project.techStack.map(t => `- ${t}`).join('\n') : '- Standard modern stack';
   const cmdList = Object.keys(config.commands).length ? Object.entries(config.commands).map(([cmd, script]) => `- \`${cmd}\`: \`${script}\``).join('\n') : '- None specified';
   const codeStyleList = config.guidelines.codeStyle.length ? config.guidelines.codeStyle.map(s => `- ${s}`).join('\n') : '- Follow standard clean code principles.';

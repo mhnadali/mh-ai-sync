@@ -52,8 +52,8 @@ Modern AI software development suffers from **"Rule Drift"** and fragmented cont
 
 ## 🚀 Quick Start
 
-### 1. Initialize Configuration
-Generate an initial canonical configuration in your workspace:
+### 1. Initialize Configuration (With Stack Auto-Detection)
+Automatically detects your project language (Node.js, TypeScript, Python, Rust, Go), framework (Next.js, FastAPI, etc.), and commands:
 ```bash
 node bin/index.js init
 ```
@@ -66,7 +66,16 @@ node bin/index.js build
 node bin/index.js sync
 ```
 
-### 3. Bidirectional Import from Legacy Configs
+### 3. Check Sync Status & Drift Detection
+Inspect whether any AI config has drifted or been modified manually:
+```bash
+node bin/index.js status
+
+# For CI/CD and pre-commit checks (exits with code 1 if drift detected):
+node bin/index.js status --check
+```
+
+### 4. Bidirectional Import from Legacy Configs
 Import your existing `CLAUDE.md` or `.cursorrules` files into the unified schema:
 ```bash
 # Import from Claude Code configuration
