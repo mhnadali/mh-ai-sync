@@ -8,6 +8,7 @@ const { detectStack } = require('../src/detectors');
 const { checkStatus, formatStatusReport } = require('../src/status');
 const { auditConfig, formatAuditReport, redactSecrets } = require('../src/security');
 const { startWatcher } = require('../src/watcher');
+const { installGitHubAction } = require('../src/ci');
 const {
   sanitize,
   generateClaudeMd,
@@ -202,36 +203,43 @@ function watch() {
   });
 }
 
+function setupCi() {
+  const res = installGitHubAction(CWD);
+  log(`✔ Installed GitHub Action CI/CD workflow -> ${res.relativePath}`);
+  log('✨ Your repository will now automatically enforce AI sync & secret checks on every PR!', "\x1b[36m");
+}
+
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v1.3.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v1.4.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
   node bin/index.js <command> [options]
 
 \x1b[1mCOMMANDS:\x1b[0m
-  \x1b[32minit\x1b[0m         Auto-detect project stack & create customized mhai.config.json
-  \x1b[32mbuild\x1b[0m (sync)  Compile canonical config into all AI formats:
-               - CLAUDE.md (Claude Code)
-               - AGENTS.md (Hermes, Aider, Open Standard)
-               - ANTIGRAVITY.md (Google Antigravity)
-               - .cursorrules (Legacy Cursor IDE)
-               - .cursor/rules/*.mdc (Modern Cursor 2.0 Modular Rules)
-               - skills/*/SKILL.md (Antigravity & Hermes Modular Skills)
-               - .windsurfrules (Windsurf)
-               - .github/copilot-instructions.md (GitHub Copilot)
-               - .mcp.json (Model Context Protocol)
-  \x1b[32mwatch\x1b[0m        Start real-time live watcher to auto-sync on file changes
-  \x1b[32mstatus\x1b[0m (diff) Check synchronization status and detect rule drift
-  \x1b[32maudit\x1b[0m (lint)  Scan instructions for exposed API keys, tokens & credentials
-  \x1b[32mimport <src>\x1b[0m  Import from 'claude', 'cursor', or 'agents' into mhai.config.json
-  \x1b[32mhelp\x1b[0m          Show this help menu
+  \x1b[32minit\x1b[0m          Auto-detect project stack & create customized mhai.config.json
+  \x1b[32mbuild\x1b[0m (sync)   Compile canonical config into all AI formats:
+                - CLAUDE.md (Claude Code)
+                - AGENTS.md (Hermes, Aider, Open Standard)
+                - ANTIGRAVITY.md (Google Antigravity)
+                - .cursorrules (Legacy Cursor IDE)
+                - .cursor/rules/*.mdc (Modern Cursor 2.0 Modular Rules)
+                - skills/*/SKILL.md (Antigravity & Hermes Modular Skills)
+                - .windsurfrules (Windsurf)
+                - .github/copilot-instructions.md (GitHub Copilot)
+                - .mcp.json (Model Context Protocol)
+  \x1b[32mwatch\x1b[0m         Start real-time live watcher to auto-sync on file changes
+  \x1b[32mstatus\x1b[0m (diff)  Check synchronization status and detect rule drift
+  \x1b[32maudit\x1b[0m (lint)   Scan instructions for exposed API keys, tokens & credentials
+  \x1b[32mci\x1b[0m (github-action) Install GitHub Actions workflow for PR verification
+  \x1b[32mimport <src>\x1b[0m   Import from 'claude', 'cursor', or 'agents' into mhai.config.json
+  \x1b[32mhelp\x1b[0m           Show this help menu
 
 \x1b[1mOPTIONS:\x1b[0m
-  --check      When running 'status', exit with code 1 if drift or missing files detected
-  --strict     When running 'audit', exit with code 1 if any credentials are found
-  --redact     When running 'build', automatically redact detected secrets
+  --check       When running 'status', exit with code 1 if drift or missing files detected
+  --strict      When running 'audit', exit with code 1 if any credentials are found
+  --redact      When running 'build', automatically redact detected secrets
 `);
 }
 
@@ -256,6 +264,10 @@ switch (command) {
   case 'audit':
   case 'lint':
     audit(args.includes('--strict'));
+    break;
+  case 'ci':
+  case 'github-action':
+    setupCi();
     break;
   case 'import':
     importFrom(args[1] || 'claude');

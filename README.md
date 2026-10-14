@@ -104,7 +104,13 @@ node bin/index.js status
 node bin/index.js status --check
 ```
 
-### 6. Bidirectional Import from Legacy Configs
+### 6. Install GitHub Actions CI/CD Workflow
+Automatically generate `.github/workflows/ai-sync-check.yml` to block out-of-sync PRs or secret leaks:
+```bash
+node bin/index.js ci
+```
+
+### 7. Bidirectional Import from Legacy Configs
 Import your existing `CLAUDE.md` or `.cursorrules` files into the unified schema:
 ```bash
 # Import from Claude Code configuration

@@ -3,6 +3,7 @@ test_sandbox/
 test_phase1_sandbox/
 test_phase2_sandbox/
 test_phase3_sandbox/
+test_phase4_sandbox/
 *.log
 .DS_Store
 Thumbs.db
