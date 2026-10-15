@@ -62,7 +62,13 @@ const {
   generateSkillFiles,
   generateWindsurfRules,
   generateCopilotInstructions,
-  generateMcpConfig
+  generateMcpConfig,
+  generateClineRules,
+  generateRooModes,
+  generateAiderConventions,
+  generateAiderConfig,
+  generateContinueRules,
+  generateZedInstructions
 } = require('../src/generators');
 
 const CONFIG_FILE = 'mhai.config.json';
@@ -136,12 +142,14 @@ function importFrom(sourceType) {
   const sourceFiles = {
     claude: 'CLAUDE.md',
     agents: 'AGENTS.md',
-    cursor: '.cursorrules'
+    cursor: '.cursorrules',
+    cline: '.clinerules',
+    aider: 'CONVENTIONS.md'
   };
 
   const relFile = sourceFiles[sourceType];
   if (!relFile) {
-    log(`✖ Unknown import source "${sourceType}". Supported sources: 'claude', 'agents', 'cursor'`, "\x1b[31m");
+    log(`✖ Unknown import source "${sourceType}". Supported sources: 'claude', 'agents', 'cursor', 'cline', 'aider'`, "\x1b[31m");
     return;
   }
 
@@ -160,7 +168,7 @@ function importFrom(sourceType) {
     if (Object.keys(parsed.commands).length) imported.commands = { ...imported.commands, ...parsed.commands };
     if (parsed.guidelines.agentRules.length) imported.guidelines.agentRules = parsed.guidelines.agentRules;
     if (parsed.guidelines.codeStyle.length) imported.guidelines.codeStyle = parsed.guidelines.codeStyle;
-  } else if (sourceType === 'agents') {
+  } else if (sourceType === 'agents' || sourceType === 'cline' || sourceType === 'aider') {
     const parsed = parseAgentsMd(fs.readFileSync(fullSourcePath, 'utf-8'));
     if (parsed.name) imported.project.name = parsed.name;
     if (parsed.overview) imported.project.overview = parsed.overview;
@@ -234,6 +242,34 @@ function build(redact = false, syncWorkspaces = false) {
     fs.writeFileSync(fullSkillPath, processContent(content), 'utf-8');
   }
   log(`✔ Synchronized -> skills/ (${Object.keys(skillFiles).length} modular Agent skills)`);
+
+  // 10. .clinerules (Cline AI)
+  fs.writeFileSync(path.join(CWD, '.clinerules'), processContent(generateClineRules(config, taskBanner)), 'utf-8');
+  log('✔ Synchronized -> .clinerules (Cline AI)');
+
+  // 11. .roomodes (Roo Code custom modes)
+  fs.writeFileSync(path.join(CWD, '.roomodes'), processContent(generateRooModes(config, taskBanner)), 'utf-8');
+  log('✔ Synchronized -> .roomodes (Roo Code Modes)');
+
+  // 12. CONVENTIONS.md (Aider coding conventions)
+  fs.writeFileSync(path.join(CWD, 'CONVENTIONS.md'), processContent(generateAiderConventions(config, taskBanner)), 'utf-8');
+  log('✔ Synchronized -> CONVENTIONS.md (Aider Conventions)');
+
+  // 13. .aider.conf.yml (Aider CLI config)
+  fs.writeFileSync(path.join(CWD, '.aider.conf.yml'), processContent(generateAiderConfig(config)), 'utf-8');
+  log('✔ Synchronized -> .aider.conf.yml (Aider Config)');
+
+  // 14. .continue/rules/project-rules.md (Continue.dev)
+  const continueDir = path.join(CWD, '.continue', 'rules');
+  if (!fs.existsSync(continueDir)) fs.mkdirSync(continueDir, { recursive: true });
+  fs.writeFileSync(path.join(continueDir, 'project-rules.md'), processContent(generateContinueRules(config, taskBanner)), 'utf-8');
+  log('✔ Synchronized -> .continue/rules/project-rules.md (Continue.dev)');
+
+  // 15. .zed/instructions.md (Zed Editor Assistant)
+  const zedDir = path.join(CWD, '.zed');
+  if (!fs.existsSync(zedDir)) fs.mkdirSync(zedDir, { recursive: true });
+  fs.writeFileSync(path.join(zedDir, 'instructions.md'), processContent(generateZedInstructions(config, taskBanner)), 'utf-8');
+  log('✔ Synchronized -> .zed/instructions.md (Zed Editor)');
 
   if (taskState.activeTask && taskState.status !== 'idle') {
     log(`✔ Active Task Bridge active: "${taskState.activeTask}" synchronized across agents!`, "\x1b[36m");
@@ -604,6 +640,11 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                 - .windsurfrules (Windsurf)
                 - .github/copilot-instructions.md (GitHub Copilot)
                 - .mcp.json (Model Context Protocol)
+                - .clinerules (Cline AI Assistant)
+                - .roomodes (Roo Code Custom Modes)
+                - CONVENTIONS.md & .aider.conf.yml (Aider CLI)
+                - .continue/rules/project-rules.md (Continue.dev)
+                - .zed/instructions.md (Zed Editor Assistant)
   \x1b[32mdiff\x1b[0m [file]    Show unified line-by-line colored diff of modified files on disk
   \x1b[32mmerge\x1b[0m [file]   3-Way merge: absorb manual/AI edits on disk back into mhai.config.json
   \x1b[32mremote\x1b[0m        Manage remote team standards & organization registries (Phase 11):

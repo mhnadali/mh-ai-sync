@@ -289,6 +289,160 @@ function generateMcpConfig(rawConfig) {
   }, null, 2);
 }
 
+function generateClineRules(rawConfig, taskBanner = "") {
+  const config = sanitize(rawConfig);
+  const techStackList = config.project.techStack.length ? config.project.techStack.map(t => `- ${t}`).join('\n') : '- Modern software stack';
+  const cmdList = Object.keys(config.commands).length ? Object.entries(config.commands).map(([cmd, script]) => `- \`${cmd}\`: \`${script}\``).join('\n') : '- None specified';
+  const codeStyleList = config.guidelines.codeStyle.length ? config.guidelines.codeStyle.map(s => `- ${s}`).join('\n') : '- Follow clean code standards.';
+  const gitPracticesList = config.guidelines.gitPractices.length ? config.guidelines.gitPractices.map(g => `- ${g}`).join('\n') : '- Use conventional commits.';
+  const agentRulesList = config.guidelines.agentRules.length ? config.guidelines.agentRules.map(r => `- ${r}`).join('\n') : '- Preserve existing code conventions and tests.';
+
+  return `# Cline Rules & Project Directives
+> Project: ${config.project.name}
+> Generated via M.H. AI Sync
+
+${taskBanner}## Overview
+${config.project.overview}
+
+## Tech Stack
+${techStackList}
+
+## Commands & Workflows
+${cmdList}
+
+## Architecture
+${config.project.architecture}
+
+## Code Style & Standards
+${codeStyleList}
+
+## Git Practices
+${gitPracticesList}
+
+## Agent Directives & Constraints
+${agentRulesList}
+`;
+}
+
+function generateRooModes(rawConfig, taskBanner = "") {
+  const config = sanitize(rawConfig);
+  const allRules = [
+    ...config.guidelines.agentRules,
+    ...config.guidelines.codeStyle,
+    ...config.guidelines.gitPractices
+  ];
+  const rulesSummary = allRules.length ? allRules.join('\n- ') : 'Adhere to clean code standards.';
+  const instructions = `${taskBanner ? taskBanner.trim() + '\n\n' : ''}Project: ${config.project.name}\n${config.project.overview}\n\nCore Guidelines:\n- ${rulesSummary}`;
+
+  return JSON.stringify({
+    customModes: [
+      {
+        slug: "code",
+        name: "Code",
+        roleDefinition: `Expert software engineer for ${config.project.name}. Write production-ready, type-safe code adhering strictly to project guidelines.`,
+        groups: ["read", "edit", "command", "mcp"],
+        customInstructions: instructions
+      },
+      {
+        slug: "architect",
+        name: "Architect",
+        roleDefinition: `System architect analyzing architecture, modularity, and dependencies for ${config.project.name}.`,
+        groups: ["read", "browser", "mcp"],
+        customInstructions: instructions
+      },
+      {
+        slug: "test-engineer",
+        name: "QA Engineer",
+        roleDefinition: `Test engineer writing, maintaining, and verifying unit, integration, and e2e test suites for ${config.project.name}.`,
+        groups: ["read", "edit", "command"],
+        customInstructions: instructions
+      }
+    ]
+  }, null, 2);
+}
+
+function generateAiderConventions(rawConfig, taskBanner = "") {
+  const config = sanitize(rawConfig);
+  const cmdList = Object.keys(config.commands).length ? Object.entries(config.commands).map(([cmd, script]) => `- \`${cmd}\`: \`${script}\``).join('\n') : '- None';
+  const codeStyleList = config.guidelines.codeStyle.length ? config.guidelines.codeStyle.map(s => `- ${s}`).join('\n') : '- Clean code and DRY principles';
+  const gitPracticesList = config.guidelines.gitPractices.length ? config.guidelines.gitPractices.map(g => `- ${g}`).join('\n') : '- Use conventional commits';
+  const agentRulesList = config.guidelines.agentRules.length ? config.guidelines.agentRules.map(r => `- ${r}`).join('\n') : '- Write safe, tested, and maintainable code';
+
+  return `# CONVENTIONS.md - Aider Repository Guidelines
+Project: ${config.project.name}
+
+${taskBanner}## Overview
+${config.project.overview}
+
+## Build & Test Commands
+${cmdList}
+
+## Code Style & Conventions
+${codeStyleList}
+
+## Git Conventions
+${gitPracticesList}
+
+## Agent Directives & Constraints
+${agentRulesList}
+`;
+}
+
+function generateAiderConfig(rawConfig) {
+  const config = sanitize(rawConfig);
+  const testCmd = config.commands.test || 'npm test';
+  return `# .aider.conf.yml - Generated via M.H. AI Sync
+read:
+  - CONVENTIONS.md
+test-cmd: ${testCmd}
+auto-test: true
+`;
+}
+
+function generateContinueRules(rawConfig, taskBanner = "") {
+  const config = sanitize(rawConfig);
+  const allRules = [
+    ...config.guidelines.codeStyle,
+    ...config.guidelines.gitPractices,
+    ...config.guidelines.agentRules
+  ];
+  const rulesList = allRules.length ? allRules.map(r => `- ${r}`).join('\n') : '- Maintain clean, well-tested code.';
+
+  return `# Continue.dev Custom Prompt Rules
+Project: ${config.project.name}
+
+${taskBanner}## Context
+${config.project.overview}
+
+## Directives
+${rulesList}
+`;
+}
+
+function generateZedInstructions(rawConfig, taskBanner = "") {
+  const config = sanitize(rawConfig);
+  const allRules = [
+    ...config.guidelines.codeStyle,
+    ...config.guidelines.gitPractices,
+    ...config.guidelines.agentRules
+  ];
+  const rulesList = allRules.length ? allRules.map(r => `- ${r}`).join('\n') : '- Maintain clean, well-tested code.';
+  const cmdList = Object.keys(config.commands).length ? Object.entries(config.commands).map(([cmd, script]) => `- \`${cmd}\`: \`${script}\``).join('\n') : '- None specified';
+
+  return `# Zed Assistant Instructions
+Project: ${config.project.name}
+
+${taskBanner}## Context
+${config.project.overview}
+
+## Guidelines
+${rulesList}
+
+## Commands
+${cmdList}
+`;
+}
+
 module.exports = {
   sanitize,
   generateClaudeMd,
@@ -299,5 +453,11 @@ module.exports = {
   generateSkillFiles,
   generateWindsurfRules,
   generateCopilotInstructions,
-  generateMcpConfig
+  generateMcpConfig,
+  generateClineRules,
+  generateRooModes,
+  generateAiderConventions,
+  generateAiderConfig,
+  generateContinueRules,
+  generateZedInstructions
 };

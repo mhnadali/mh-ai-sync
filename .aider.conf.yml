@@ -1,0 +1,5 @@
+# .aider.conf.yml - Generated via M.H. AI Sync
+read:
+  - CONVENTIONS.md
+test-cmd: npm test
+auto-test: true

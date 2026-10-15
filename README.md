@@ -47,20 +47,21 @@ Modern AI software development suffers from **"Rule Drift"** and fragmented cont
 ├── mhai.config.json              # Canonical Master Config (Source of Truth)
 │
 ├── CLAUDE.md                     # Target: Claude Code CLI
-├── AGENTS.md                     # Target: Universal Standard (Hermes, Aider, etc.)
+├── AGENTS.md                     # Target: Universal Standard (Hermes, Open Standard)
 ├── ANTIGRAVITY.md                # Target: Google Antigravity & Agent Runtimes
 ├── .cursorrules                  # Target: Legacy Cursor IDE
 ├── .cursor/
-│   └── rules/                    # Target: Modern Cursor 2.0 Rules
-│       ├── project-rules.mdc
-│       └── *.mdc (scoped domain rules)
-├── skills/                       # Target: Antigravity & Hermes Modular Skills
-│   └── <skill-name>/
-│       └── SKILL.md
+│   └── rules/                    # Target: Modern Cursor 2.0 Rules (*.mdc)
+├── skills/                       # Target: Antigravity & Hermes Modular Skills (skills/*/SKILL.md)
 ├── .windsurfrules                # Target: Windsurf Cascade
-├── .github/
-│   └── copilot-instructions.md   # Target: GitHub Copilot
-└── .mcp.json                     # Target: Model Context Protocol (MCP) Server Setup
+├── .github/copilot-instructions.md # Target: GitHub Copilot
+├── .mcp.json                     # Target: Model Context Protocol (MCP) Setup
+├── .clinerules                   # Target: Cline AI Assistant
+├── .roomodes                     # Target: Roo Code Custom Modes (JSON)
+├── CONVENTIONS.md                # Target: Aider Repository Guidelines
+├── .aider.conf.yml               # Target: Aider Configuration
+├── .continue/rules/project-rules.md # Target: Continue.dev Custom Prompt Rules
+└── .zed/instructions.md          # Target: Zed Editor Assistant Directives
 ```
 
 ---
@@ -74,7 +75,7 @@ node bin/index.js init
 ```
 
 ### 2. Synchronize All Agents
-Compile your canonical configuration across all 7 AI targets:
+Compile your canonical configuration across all 16 AI targets simultaneously:
 ```bash
 node bin/index.js build
 # or

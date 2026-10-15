@@ -17,7 +17,13 @@ const {
   generateSkillFiles,
   generateWindsurfRules,
   generateCopilotInstructions,
-  generateMcpConfig
+  generateMcpConfig,
+  generateClineRules,
+  generateRooModes,
+  generateAiderConventions,
+  generateAiderConfig,
+  generateContinueRules,
+  generateZedInstructions
 } = require('./generators');
 const { loadTaskState, saveTaskState, clearActiveTask, generateTaskBanner } = require('./task');
 const { checkStatus } = require('./status');
@@ -273,10 +279,32 @@ function syncAllWorkspaces(rawRootConfig, rootDir = process.cwd(), taskBanner = 
       fs.writeFileSync(fullSkillPath, content, 'utf8');
     }
 
+    // 10. .clinerules
+    fs.writeFileSync(path.join(targetDir, '.clinerules'), generateClineRules(wsConfig, effectiveBanner), 'utf8');
+
+    // 11. .roomodes
+    fs.writeFileSync(path.join(targetDir, '.roomodes'), generateRooModes(wsConfig, effectiveBanner), 'utf8');
+
+    // 12. CONVENTIONS.md
+    fs.writeFileSync(path.join(targetDir, 'CONVENTIONS.md'), generateAiderConventions(wsConfig, effectiveBanner), 'utf8');
+
+    // 13. .aider.conf.yml
+    fs.writeFileSync(path.join(targetDir, '.aider.conf.yml'), generateAiderConfig(wsConfig), 'utf8');
+
+    // 14. .continue/rules/project-rules.md
+    const continueDir = path.join(targetDir, '.continue', 'rules');
+    if (!fs.existsSync(continueDir)) fs.mkdirSync(continueDir, { recursive: true });
+    fs.writeFileSync(path.join(continueDir, 'project-rules.md'), generateContinueRules(wsConfig, effectiveBanner), 'utf8');
+
+    // 15. .zed/instructions.md
+    const zedDir = path.join(targetDir, '.zed');
+    if (!fs.existsSync(zedDir)) fs.mkdirSync(zedDir, { recursive: true });
+    fs.writeFileSync(path.join(zedDir, 'instructions.md'), generateZedInstructions(wsConfig, effectiveBanner), 'utf8');
+
     results.push({
       workspace: ws.name,
       path: ws.relativePath,
-      filesGenerated: 7 + Object.keys(mdcFiles).length + Object.keys(skillFiles).length
+      filesGenerated: 13 + Object.keys(mdcFiles).length + Object.keys(skillFiles).length
     });
   }
 

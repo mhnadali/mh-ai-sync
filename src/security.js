@@ -75,7 +75,13 @@ function auditConfig(config, rootDir = process.cwd()) {
     '.cursorrules',
     '.windsurfrules',
     '.mcp.json',
-    path.join('.github', 'copilot-instructions.md')
+    path.join('.github', 'copilot-instructions.md'),
+    '.clinerules',
+    '.roomodes',
+    'CONVENTIONS.md',
+    '.aider.conf.yml',
+    path.join('.continue', 'rules', 'project-rules.md'),
+    path.join('.zed', 'instructions.md')
   ];
 
   for (const relFile of targetFiles) {

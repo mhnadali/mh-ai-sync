@@ -1,0 +1,34 @@
+# Cline Rules & Project Directives
+> Project: AI-Augmented Project
+> Generated via M.H. AI Sync
+
+## Overview
+Multi-agent context-aware codebase configured via M.H. AI Sync.
+
+## Tech Stack
+- Node.js
+- TypeScript / JavaScript
+
+## Commands & Workflows
+- `install`: `npm install`
+- `build`: `npm run build`
+- `test`: `npm test`
+- `lint`: `npm run lint`
+- `dev`: `npm run dev`
+
+## Architecture
+Modular layered architecture with AI agent support.
+
+## Code Style & Standards
+- Follow Clean Code and DRY principles.
+- Write type-safe and self-documenting code with descriptive naming.
+- Keep functions focused on a single responsibility.
+
+## Git Practices
+- Use conventional commits (feat:, fix:, chore:, refactor:).
+- Do not push broken builds or failing tests.
+
+## Agent Directives & Constraints
+- Preserve existing comments and docstrings.
+- Always verify syntax and run test suites before finalizing changes.
+- Prefer minimal and surgical edits over rewriting entire files.

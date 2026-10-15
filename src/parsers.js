@@ -29,16 +29,16 @@ function parseAgentsMd(content = "") {
     // Section Headers Detection
     else if (/^##\s+(Commands|Build & Test|Workflows)/i.test(trimmed)) {
       currentSection = "commands";
-    } else if (/^##\s+(Development Rules|Guidelines|Rules|Agent Guidelines)/i.test(trimmed)) {
-      currentSection = "guidelines";
     } else if (/^##\s+(Overview|Description|Context)/i.test(trimmed)) {
       currentSection = "overview";
-    } else if (/^###\s+[*_]*(?:Code\s+Style|Coding\s+Standards|Code\s+Conventions)/i.test(trimmed)) {
+    } else if (/^#{2,3}\s+[*_]*(?:Code\s+Style|Coding\s+Standards|Code\s+Conventions)/i.test(trimmed)) {
       currentSection = "codeStyle";
-    } else if (/^###\s+[*_]*(?:Git\s+Workflow|Git\s+Practices|Git\s+Conventions)/i.test(trimmed)) {
+    } else if (/^#{2,3}\s+[*_]*(?:Git\s+Workflow|Git\s+Practices|Git\s+Conventions)/i.test(trimmed)) {
       currentSection = "gitPractices";
-    } else if (/^###\s+[*_]*(?:Agent\s+Constraints|Agent\s+Rules|Agent\s+Guidelines|Critical\s+Rules)/i.test(trimmed)) {
+    } else if (/^#{2,3}\s+[*_]*(?:Agent\s+Constraints|Agent\s+Rules|Agent\s+Guidelines|Agent\s+Directives|Critical\s+Rules)/i.test(trimmed)) {
       currentSection = "agentRules";
+    } else if (/^##\s+(Development Rules|Guidelines|Rules|Agent Guidelines)/i.test(trimmed)) {
+      currentSection = "guidelines";
     } 
     // Command Matching: matches key: value within commands section (with or without backticks/markdown)
     else if (currentSection === "commands" && /^[-*]\s+/.test(trimmed) && trimmed.includes(':')) {
