@@ -116,7 +116,23 @@ node bin/index.js hook
 node bin/index.js hook uninstall
 ```
 
-### 7. Check Sync Status & Drift Detection
+### 7. Shared Agent Memory & Active Task Bridge
+Broadcast an active working task and real-time progress notes to all AI agents seamlessly:
+```bash
+# Set active goal across Claude, Antigravity, and Cursor
+node bin/index.js task set "Refactor auth middleware to OAuth2" "Database schema migration applied"
+
+# Add progress notes as you work
+node bin/index.js task note "Updated bearer token verification tests"
+
+# Check active task status
+node bin/index.js task
+
+# Clear active task when done
+node bin/index.js task clear
+```
+
+### 8. Check Sync Status & Drift Detection
 Inspect whether any AI config has drifted or been modified manually:
 ```bash
 node bin/index.js status
@@ -125,13 +141,13 @@ node bin/index.js status
 node bin/index.js status --check
 ```
 
-### 8. Install GitHub Actions CI/CD Workflow
+### 9. Install GitHub Actions CI/CD Workflow
 Automatically generate `.github/workflows/ai-sync-check.yml` to block out-of-sync PRs or secret leaks:
 ```bash
 node bin/index.js ci
 ```
 
-### 9. Bidirectional Import from Legacy Configs
+### 10. Bidirectional Import from Legacy Configs
 Import your existing `CLAUDE.md` or `.cursorrules` files into the unified schema:
 ```bash
 # Import from Claude Code configuration

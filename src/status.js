@@ -18,17 +18,22 @@ const {
   generateMcpConfig
 } = require('./generators');
 
+const { loadTaskState, generateTaskBanner } = require('./task');
+
 function normalizeContent(str) {
   if (typeof str !== 'string') return '';
   return str.replace(/\r\n/g, '\n').trim();
 }
 
 function checkStatus(config, rootDir = process.cwd()) {
+  const taskState = loadTaskState(rootDir);
+  const taskBanner = generateTaskBanner(taskState);
+
   const fileTargets = [
-    { name: 'CLAUDE.md', expected: normalizeContent(generateClaudeMd(config)) },
-    { name: 'AGENTS.md', expected: normalizeContent(generateAgentsMd(config)) },
-    { name: 'ANTIGRAVITY.md', expected: normalizeContent(generateAntigravityConfig(config)) },
-    { name: '.cursorrules', expected: normalizeContent(generateCursorRules(config)) },
+    { name: 'CLAUDE.md', expected: normalizeContent(generateClaudeMd(config, taskBanner)) },
+    { name: 'AGENTS.md', expected: normalizeContent(generateAgentsMd(config, taskBanner)) },
+    { name: 'ANTIGRAVITY.md', expected: normalizeContent(generateAntigravityConfig(config, taskBanner)) },
+    { name: '.cursorrules', expected: normalizeContent(generateCursorRules(config, taskBanner)) },
     { name: '.windsurfrules', expected: normalizeContent(generateWindsurfRules(config)) },
     { name: path.join('.github', 'copilot-instructions.md'), expected: normalizeContent(generateCopilotInstructions(config)) },
     { name: '.mcp.json', expected: normalizeContent(generateMcpConfig(config)) }

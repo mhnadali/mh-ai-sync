@@ -55,12 +55,12 @@ function sanitize(rawConfig) {
   };
 }
 
-function generateClaudeMd(rawConfig) {
+function generateClaudeMd(rawConfig, taskBanner = "") {
   const config = sanitize(rawConfig);
   if (config.settings.strategy === 'reference') {
     return `# Claude Code Configuration (${config.project.name})
 
-@AGENTS.md
+${taskBanner}@AGENTS.md
 `;
   }
 
@@ -80,7 +80,7 @@ function generateClaudeMd(rawConfig) {
 
   return `# Claude Code Configuration (${config.project.name})
 
-## Overview
+${taskBanner}## Overview
 ${config.project.overview}
 
 ## Tech Stack
@@ -100,7 +100,7 @@ ${agentRulesList}
 ${modularSection}`;
 }
 
-function generateAgentsMd(rawConfig) {
+function generateAgentsMd(rawConfig, taskBanner = "") {
   const config = sanitize(rawConfig);
   const cmdList = Object.keys(config.commands).length ? Object.entries(config.commands).map(([cmd, script]) => `- **${cmd}**: \`${script}\``).join('\n') : '- **none**: `none`';
   const codeStyleList = config.guidelines.codeStyle.length ? config.guidelines.codeStyle.map(s => `- ${s}`).join('\n') : '- Standard Clean Code principles';
@@ -121,7 +121,7 @@ function generateAgentsMd(rawConfig) {
 > Project: ${config.project.name}
 > Generated via M.H. AI Sync (Single Source of Truth)
 
-## Overview
+${taskBanner}## Overview
 ${config.project.overview}
 
 ## Commands & Workflows
@@ -139,7 +139,7 @@ ${agentRulesList}
 ${modularSection}`;
 }
 
-function generateAntigravityConfig(rawConfig) {
+function generateAntigravityConfig(rawConfig, taskBanner = "") {
   const config = sanitize(rawConfig);
   const cmdList = Object.keys(config.commands).length ? Object.entries(config.commands).map(([cmd, script]) => `- Task [${cmd}]: \`${script}\``).join('\n') : '- No standard tasks defined.';
   const agentRulesList = config.guidelines.agentRules.length ? config.guidelines.agentRules.map(r => `- DIRECTIVE: ${r}`).join('\n') : '- DIRECTIVE: Follow workspace safety guidelines.';
@@ -147,7 +147,7 @@ function generateAntigravityConfig(rawConfig) {
 
   return `# Google Antigravity & Hermes Context
 
-## Project Definition
+${taskBanner}## Project Definition
 Name: ${config.project.name}
 Description: ${config.project.overview}
 
@@ -162,7 +162,7 @@ ${skillsList}
 `;
 }
 
-function generateCursorRules(rawConfig) {
+function generateCursorRules(rawConfig, taskBanner = "") {
   const config = sanitize(rawConfig);
   const agentRulesList = config.guidelines.agentRules.length ? config.guidelines.agentRules.map(r => `- ${r}`).join('\n') : '- Follow project best practices.';
   const codeStyleList = config.guidelines.codeStyle.length ? config.guidelines.codeStyle.map(s => `- ${s}`).join('\n') : '- Clean, readable and modular.';
@@ -171,7 +171,7 @@ function generateCursorRules(rawConfig) {
   return `# Cursor Rules
 You are an expert AI software engineer assisting in this repository.
 
-## Rules & Constraints
+${taskBanner}## Rules & Constraints
 ${agentRulesList}
 
 ## Code Style

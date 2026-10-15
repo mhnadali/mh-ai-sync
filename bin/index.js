@@ -12,6 +12,13 @@ const { installGitHubAction } = require('../src/ci');
 const { installHook, uninstallHook, isHookInstalled } = require('../src/hooks');
 const { analyzePromptBudget, formatAnalysisReport } = require('../src/analyzer');
 const {
+  loadTaskState,
+  setActiveTask,
+  addTaskNote,
+  clearActiveTask,
+  generateTaskBanner
+} = require('../src/task');
+const {
   sanitize,
   generateClaudeMd,
   generateAgentsMd,
@@ -120,25 +127,27 @@ function importFrom(sourceType) {
 
 function build(redact = false) {
   const config = loadConfig();
+  const taskState = loadTaskState(CWD);
+  const taskBanner = generateTaskBanner(taskState);
 
   function processContent(content) {
     return redact ? redactSecrets(content) : content;
   }
 
   // 1. CLAUDE.md (Claude Code)
-  fs.writeFileSync(path.join(CWD, 'CLAUDE.md'), processContent(generateClaudeMd(config)), 'utf-8');
+  fs.writeFileSync(path.join(CWD, 'CLAUDE.md'), processContent(generateClaudeMd(config, taskBanner)), 'utf-8');
   log('✔ Synchronized -> CLAUDE.md (Claude Code)');
 
   // 2. AGENTS.md (Universal Standard & Hermes / Aider)
-  fs.writeFileSync(path.join(CWD, 'AGENTS.md'), processContent(generateAgentsMd(config)), 'utf-8');
+  fs.writeFileSync(path.join(CWD, 'AGENTS.md'), processContent(generateAgentsMd(config, taskBanner)), 'utf-8');
   log('✔ Synchronized -> AGENTS.md (Universal Standard / Hermes / Aider)');
 
   // 3. ANTIGRAVITY.md / GEMINI.md (Antigravity context)
-  fs.writeFileSync(path.join(CWD, 'ANTIGRAVITY.md'), processContent(generateAntigravityConfig(config)), 'utf-8');
+  fs.writeFileSync(path.join(CWD, 'ANTIGRAVITY.md'), processContent(generateAntigravityConfig(config, taskBanner)), 'utf-8');
   log('✔ Synchronized -> ANTIGRAVITY.md (Google Antigravity)');
 
   // 4. .cursorrules (Cursor IDE)
-  fs.writeFileSync(path.join(CWD, '.cursorrules'), processContent(generateCursorRules(config)), 'utf-8');
+  fs.writeFileSync(path.join(CWD, '.cursorrules'), processContent(generateCursorRules(config, taskBanner)), 'utf-8');
   log('✔ Synchronized -> .cursorrules (Cursor IDE)');
 
   // 5. .windsurfrules (Windsurf Cascade)
@@ -173,6 +182,10 @@ function build(redact = false) {
     fs.writeFileSync(fullSkillPath, processContent(content), 'utf-8');
   }
   log(`✔ Synchronized -> skills/ (${Object.keys(skillFiles).length} modular Agent skills)`);
+
+  if (taskState.activeTask && taskState.status !== 'idle') {
+    log(`✔ Active Task Bridge active: "${taskState.activeTask}" synchronized across agents!`, "\x1b[36m");
+  }
 
   log('\n✨ [M.H. AI Sync] All AI Agents and Coding assistants are fully aligned!', "\x1b[36m");
 }
@@ -239,6 +252,49 @@ function manageHook(action = 'install') {
   }
 }
 
+function manageTask(subcommand, arg1, arg2) {
+  if (subcommand === 'set') {
+    if (!arg1) {
+      log('✖ Please provide a task description: mhai task set "<description>" [note]', "\x1b[31m");
+      process.exit(1);
+    }
+    setActiveTask(arg1, { note: arg2 }, CWD);
+    log(`✔ Active task set -> "${arg1}"`);
+    build();
+  } else if (subcommand === 'note') {
+    if (!arg1) {
+      log('✖ Please provide note text: mhai task note "<note text>"', "\x1b[31m");
+      process.exit(1);
+    }
+    addTaskNote(arg1, CWD);
+    log(`✔ Added note to active task -> "${arg1}"`);
+    build();
+  } else if (subcommand === 'clear' || subcommand === 'done') {
+    clearActiveTask(CWD);
+    log('✔ Active task cleared. AI agents reset to idle.');
+    build();
+  } else {
+    const state = loadTaskState(CWD);
+    console.log('\n\x1b[1m\x1b[36m=== M.H. AI Sync Shared Agent Memory ===\x1b[0m\n');
+    if (!state.activeTask || state.status === 'idle') {
+      console.log('  Status: \x1b[33mIdle (No active task set)\x1b[0m');
+      console.log('  Hint: Run `node bin/index.js task set "<goal>"` to broadcast a task to all agents.\n');
+    } else {
+      console.log(`  Active Goal:  \x1b[32m${state.activeTask}\x1b[0m`);
+      console.log(`  Status:       \x1b[33m${state.status.toUpperCase()}\x1b[0m`);
+      console.log(`  Updated:      ${state.updatedAt ? new Date(state.updatedAt).toLocaleString() : 'N/A'} (by ${state.updatedBy})`);
+      if (state.recentNotes.length > 0) {
+        console.log('\n  Progress Notes:');
+        for (const note of state.recentNotes) {
+          console.log(`    • ${note}`);
+        }
+      }
+      console.log('\n----------------------------------------');
+      console.log('✨ This active task is injected into Claude Code, Antigravity, and Cursor contexts.\n');
+    }
+  }
+}
+
 function analyze() {
   const config = loadConfig();
   const analysis = analyzePromptBudget(config);
@@ -247,7 +303,7 @@ function analyze() {
 
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v1.5.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v1.6.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
@@ -265,6 +321,11 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                 - .windsurfrules (Windsurf)
                 - .github/copilot-instructions.md (GitHub Copilot)
                 - .mcp.json (Model Context Protocol)
+  \x1b[32mtask\x1b[0m (memory)  Manage shared active task memory across all AI agents:
+                - task set "<goal>" [note] : Broadcast new task to all agents
+                - task note "<note>"       : Append progress note
+                - task clear               : Mark task finished and reset
+                - task                     : Show current shared task status
   \x1b[32mwatch\x1b[0m         Start real-time live watcher to auto-sync on file changes
   \x1b[32mstatus\x1b[0m (diff)  Check synchronization status and detect rule drift
   \x1b[32maudit\x1b[0m (lint)   Scan instructions for exposed API keys, tokens & credentials
@@ -308,6 +369,10 @@ switch (command) {
   case 'tokens':
   case 'token':
     analyze();
+    break;
+  case 'task':
+  case 'memory':
+    manageTask(args[1], args[2], args[3]);
     break;
   case 'hook':
   case 'hooks':
