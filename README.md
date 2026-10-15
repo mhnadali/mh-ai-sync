@@ -26,6 +26,7 @@ Modern AI software development suffers from **"Rule Drift"** and fragmented cont
 ## 🌟 Features
 
 - ⚡ **Single Source of Truth:** Centralize project overview, tech stack, build/test scripts, agent safety directives, and skills in a clean JSON schema.
+- 🖥 **Interactive Terminal TUI & Web GUI Mission Control (`mhai dashboard` / `mhai ui`):** Live full-screen terminal dashboard with real-time sync meters, token budgets, and security posture, plus a local dark-mode Web GUI on port 3840 with REST API triggers.
 - 🏢 **Enterprise Monorepo & Multi-Workspace Engine (`mhai workspaces`):** Auto-discover subpackages across Turborepo, Nx, and pnpm monorepos; cascade shared architectural contracts while preserving subpackage autonomy.
 - 🧮 **Token Budget & Prompt Health Analyzer (`mhai analyze`):** Calculate exact token consumption per agent, detect duplicate rules, and measure prompt dilution risk with a 0-100 Prompt Health Score.
 - 🪝 **Native Git Hooks (`mhai hook install`):** Zero-dependency pre-commit hook that automatically blocks local commits if secret keys leak or AI contexts drift.
@@ -180,7 +181,23 @@ node bin/index.js workspaces status
 node bin/index.js status --workspaces --check
 ```
 
-### 11. Check Sync Status & Drift Detection
+### 11. Interactive Terminal TUI & Web GUI Mission Control
+Launch an interactive real-time dashboard in your terminal or view in your web browser:
+```bash
+# Launch interactive terminal TUI dashboard
+node bin/index.js dashboard
+# (or use alias)
+node bin/index.js ui
+
+# Launch local dark-mode Web GUI on http://localhost:3840
+node bin/index.js dashboard --web
+node bin/index.js dashboard --web --port 8080
+
+# Print static snapshot and exit (ideal for scripts or CI reports)
+node bin/index.js dashboard --snapshot
+```
+
+### 12. Check Sync Status & Drift Detection
 Inspect whether any AI config has drifted or been modified manually:
 ```bash
 node bin/index.js status
@@ -189,13 +206,13 @@ node bin/index.js status
 node bin/index.js status --check
 ```
 
-### 12. Install GitHub Actions CI/CD Workflow
+### 13. Install GitHub Actions CI/CD Workflow
 Automatically generate `.github/workflows/ai-sync-check.yml` to block out-of-sync PRs or secret leaks:
 ```bash
 node bin/index.js ci
 ```
 
-### 13. Bidirectional Import from Legacy Configs
+### 14. Bidirectional Import from Legacy Configs
 Import your existing `CLAUDE.md` or `.cursorrules` files into the unified schema:
 ```bash
 # Import from Claude Code configuration

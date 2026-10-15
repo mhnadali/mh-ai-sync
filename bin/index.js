@@ -38,6 +38,12 @@ const {
   formatWorkspacesReport
 } = require('../src/monorepo');
 const {
+  startTui,
+  createDashboardServer,
+  getDashboardState,
+  renderTuiDashboard
+} = require('../src/dashboard');
+const {
   sanitize,
   generateClaudeMd,
   generateAgentsMd,
@@ -282,6 +288,20 @@ function manageWorkspaces(action = 'list') {
   }
 }
 
+function showDashboard(options = {}) {
+  if (options.web) {
+    const port = options.port || 3840;
+    const server = createDashboardServer(CWD, port);
+    server.listen(port, () => {
+      log(`\n🚀 \x1b[1m\x1b[36mM.H. AI Sync Mission Control Web GUI\x1b[0m active!`, "\x1b[32m");
+      log(`👉 Open dashboard in browser: \x1b[1m\x1b[34mhttp://localhost:${port}\x1b[0m\n`);
+      log('Press Ctrl+C to shut down.');
+    });
+  } else {
+    startTui(CWD, options);
+  }
+}
+
 function audit(strict = false) {
   const config = loadConfig();
   const auditResult = auditConfig(config, CWD);
@@ -479,7 +499,7 @@ function smartMerge(filterFile = null) {
 
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v1.9.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v2.0.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
@@ -519,6 +539,10 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                 - workspaces               : Discover and list all workspace subpackages
                 - workspaces sync          : Cascade root rules down to all subpackages
                 - workspaces status        : Verify synchronization across all workspaces
+  \x1b[32mdashboard\x1b[0m (ui)    Launch interactive Terminal TUI or Web GUI dashboard:
+                - dashboard                : Live interactive TUI mission control in terminal
+                - dashboard --web          : Launch local dark-mode Web GUI on http://localhost:3840
+                - dashboard --snapshot     : Print static TUI snapshot and exit (ideal for scripts/CI)
   \x1b[32mimport <src>\x1b[0m   Import from 'claude', 'cursor', or 'agents' into mhai.config.json
   \x1b[32mhelp\x1b[0m           Show this help menu
 
@@ -528,6 +552,9 @@ A Unified Bridge for Multi-Agent AI Coding Systems
   --redact      When running 'build', automatically redact detected secrets
   --merge       When running 'build' or 'sync', automatically merge disk edits first
   --workspaces  (or --all) Also compile or check across all monorepo workspaces
+  --web         Launch Web GUI dashboard in browser
+  --port <num>  Port number for Web GUI (default: 3840)
+  --snapshot    Render static snapshot of dashboard without interactive raw mode
 `);
 }
 
@@ -567,6 +594,18 @@ switch (command) {
   case 'token':
     analyze();
     break;
+  case 'dashboard':
+  case 'ui':
+  case 'dash': {
+    const portIdx = args.indexOf('--port');
+    const customPort = portIdx !== -1 && args[portIdx + 1] ? parseInt(args[portIdx + 1], 10) : 3840;
+    showDashboard({
+      web: args.includes('--web') || args.includes('-w'),
+      port: customPort,
+      snapshot: args.includes('--snapshot') || args.includes('--once')
+    });
+    break;
+  }
   case 'mcp':
     manageMcp(args[1], args[2], ...args.slice(3));
     break;
