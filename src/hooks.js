@@ -8,11 +8,30 @@ const fs = require('fs');
 const path = require('path');
 
 function getGitHooksDir(rootDir = process.cwd()) {
-  const gitDir = path.join(rootDir, '.git');
-  if (!fs.existsSync(gitDir)) {
+  const gitPath = path.join(rootDir, '.git');
+  if (!fs.existsSync(gitPath)) {
     return null;
   }
-  return path.join(gitDir, 'hooks');
+
+  try {
+    const stat = fs.statSync(gitPath);
+    if (stat.isDirectory()) {
+      return path.join(gitPath, 'hooks');
+    }
+    if (stat.isFile()) {
+      // Handle git worktree or git submodule pointer
+      const content = fs.readFileSync(gitPath, 'utf8').trim();
+      if (content.startsWith('gitdir:')) {
+        let actualGitDir = content.slice(7).trim();
+        if (!path.isAbsolute(actualGitDir)) {
+          actualGitDir = path.resolve(rootDir, actualGitDir);
+        }
+        return path.join(actualGitDir, 'hooks');
+      }
+    }
+  } catch {}
+
+  return null;
 }
 
 function generatePreCommitScript() {
@@ -118,5 +137,6 @@ module.exports = {
   installHook,
   uninstallHook,
   isHookInstalled,
+  getGitHooksDir,
   generatePreCommitScript
 };

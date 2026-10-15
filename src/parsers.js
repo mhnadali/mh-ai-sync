@@ -33,11 +33,11 @@ function parseAgentsMd(content = "") {
       currentSection = "guidelines";
     } else if (/^##\s+(Overview|Description|Context)/i.test(trimmed)) {
       currentSection = "overview";
-    } else if (trimmed.startsWith("### Code Style")) {
+    } else if (/^###\s+[*_]*(?:Code\s+Style|Coding\s+Standards|Code\s+Conventions)/i.test(trimmed)) {
       currentSection = "codeStyle";
-    } else if (trimmed.startsWith("### Git Workflow")) {
+    } else if (/^###\s+[*_]*(?:Git\s+Workflow|Git\s+Practices|Git\s+Conventions)/i.test(trimmed)) {
       currentSection = "gitPractices";
-    } else if (trimmed.startsWith("### Agent Constraints")) {
+    } else if (/^###\s+[*_]*(?:Agent\s+Constraints|Agent\s+Rules|Agent\s+Guidelines|Critical\s+Rules)/i.test(trimmed)) {
       currentSection = "agentRules";
     } 
     // Command Matching: matches key: value within commands section (with or without backticks/markdown)

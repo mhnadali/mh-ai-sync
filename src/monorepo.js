@@ -59,7 +59,36 @@ function extractWorkspacePatterns(rootDir = process.cwd()) {
     } catch {}
   }
 
-  // 3. Fallback conventional directory patterns
+  // 3. Check lerna.json
+  const lernaPath = path.join(rootDir, 'lerna.json');
+  if (fs.existsSync(lernaPath)) {
+    try {
+      const lerna = JSON.parse(fs.readFileSync(lernaPath, 'utf8'));
+      if (Array.isArray(lerna.packages)) {
+        patterns.push(...lerna.packages);
+      }
+    } catch {}
+  }
+
+  // 4. Check Cargo.toml [workspace]
+  const cargoPath = path.join(rootDir, 'Cargo.toml');
+  if (fs.existsSync(cargoPath)) {
+    try {
+      const cargoContent = fs.readFileSync(cargoPath, 'utf8');
+      const membersMatch = cargoContent.match(/members\s*=\s*\[([\s\S]*?)\]/);
+      if (membersMatch && membersMatch[1]) {
+        const rawMembers = membersMatch[1].match(/"([^"]+)"|'([^']+)'/g);
+        if (rawMembers) {
+          for (const m of rawMembers) {
+            const clean = m.replace(/['"]/g, '').trim();
+            if (clean) patterns.push(clean);
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // 5. Fallback conventional directory patterns
   if (patterns.length === 0) {
     patterns.push('apps/*', 'packages/*', 'services/*', 'libs/*');
   }
@@ -67,12 +96,18 @@ function extractWorkspacePatterns(rootDir = process.cwd()) {
   return [...new Set(patterns)];
 }
 
+const IGNORED_WORKSPACE_DIRS = new Set([
+  'node_modules', 'dist', 'build', 'target', 'coverage',
+  '.turbo', '.git', '.next', '.nuxt', '.output', '.cache'
+]);
+
 /**
  * Discovers all workspace subpackages in the repository.
  */
 function discoverWorkspaces(rootDir = process.cwd()) {
   const patterns = extractWorkspacePatterns(rootDir);
   const workspaces = [];
+  const seenPaths = new Set();
 
   for (const pattern of patterns) {
     // Standard folder pattern: e.g. "packages/*", "apps/*", "services"
@@ -88,30 +123,38 @@ function discoverWorkspaces(rootDir = process.cwd()) {
 
       if (!isWildcard) {
         // Direct single workspace directory
-        const detected = detectStack(fullBaseDir);
-        workspaces.push({
-          name: path.basename(fullBaseDir),
-          relativePath: baseDir.replace(/\\/g, '/'),
-          fullPath: fullBaseDir,
-          techStack: detected.techStack,
-          commands: detected.commands
-        });
+        const norm = path.resolve(fullBaseDir);
+        if (!seenPaths.has(norm)) {
+          seenPaths.add(norm);
+          const detected = detectStack(fullBaseDir);
+          workspaces.push({
+            name: path.basename(fullBaseDir),
+            relativePath: baseDir.replace(/\\/g, '/'),
+            fullPath: fullBaseDir,
+            techStack: detected.techStack,
+            commands: detected.commands
+          });
+        }
       } else {
         // Wildcard directory traversal
         const entries = fs.readdirSync(fullBaseDir, { withFileTypes: true });
         for (const entry of entries) {
-          if (entry.isDirectory()) {
+          if (entry.isDirectory() && !entry.name.startsWith('.') && !IGNORED_WORKSPACE_DIRS.has(entry.name)) {
             const subDir = path.join(fullBaseDir, entry.name);
-            const detected = detectStack(subDir);
-            const rel = path.join(baseDir, entry.name).replace(/\\/g, '/');
+            const norm = path.resolve(subDir);
+            if (!seenPaths.has(norm)) {
+              seenPaths.add(norm);
+              const detected = detectStack(subDir);
+              const rel = path.join(baseDir, entry.name).replace(/\\/g, '/');
 
-            workspaces.push({
-              name: entry.name,
-              relativePath: rel,
-              fullPath: subDir,
-              techStack: detected.techStack,
-              commands: detected.commands
-            });
+              workspaces.push({
+                name: entry.name,
+                relativePath: rel,
+                fullPath: subDir,
+                techStack: detected.techStack,
+                commands: detected.commands
+              });
+            }
           }
         }
       }

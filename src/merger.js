@@ -33,6 +33,21 @@ function computeLineDiff(textExpected, textActual) {
   const m = linesExp.length;
   const n = linesAct.length;
 
+  // Large-file safety guard (e.g. > 2000 lines each)
+  if (m * n > 4000000) {
+    const maxLen = Math.max(m, n);
+    const diff = [];
+    for (let k = 0; k < maxLen; k++) {
+      if (k < m && k < n && linesExp[k] === linesAct[k]) {
+        diff.push({ type: 'same', line: linesExp[k] });
+      } else {
+        if (k < m) diff.push({ type: 'del', line: linesExp[k] });
+        if (k < n) diff.push({ type: 'add', line: linesAct[k] });
+      }
+    }
+    return diff;
+  }
+
   // Build DP table for LCS
   const dp = Array.from({ length: m + 1 }, () => new Int32Array(n + 1));
   for (let i = 0; i < m; i++) {
@@ -228,8 +243,8 @@ function mergeFileIntoConfig(targetFileName, actualContent, rawConfig) {
 
   // Helper to check rule existence
   function hasRule(ruleList, text) {
-    const clean = text.toLowerCase().trim();
-    return ruleList.some(r => r.toLowerCase().trim() === clean);
+    const clean = text.toLowerCase().replace(/[`*_#\s\.\,\;]/g, '').trim();
+    return ruleList.some(r => r.toLowerCase().replace(/[`*_#\s\.\,\;]/g, '').trim() === clean);
   }
 
   // 2. Merge Guidelines (codeStyle, gitPractices, agentRules)

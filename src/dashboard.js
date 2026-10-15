@@ -528,6 +528,14 @@ function createDashboardServer(rootDir = process.cwd(), port = 3840) {
     res.end('Not Found');
   });
 
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\x1b[31m[ERROR]\x1b[0m Port ${port} is already in use by another process.`);
+    } else {
+      console.error(`\x1b[31m[ERROR]\x1b[0m Dashboard server error:`, err.message);
+    }
+  });
+
   return server;
 }
 

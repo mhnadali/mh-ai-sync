@@ -74,7 +74,18 @@ function checkStatus(config, rootDir = process.cwd()) {
       continue;
     }
 
-    const actual = normalizeContent(fs.readFileSync(fullPath, 'utf8'));
+    let actual;
+    try {
+      actual = normalizeContent(fs.readFileSync(fullPath, 'utf8'));
+    } catch (readErr) {
+      results.push({
+        file: target.name,
+        status: 'UNREADABLE',
+        diffHint: readErr.message
+      });
+      hasDrift = true;
+      continue;
+    }
 
     if (actual === target.expected) {
       results.push({
