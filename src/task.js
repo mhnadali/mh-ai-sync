@@ -53,6 +53,10 @@ function saveTaskState(state, rootDir = process.cwd()) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
 
+  if (Array.isArray(state.recentNotes) && state.recentNotes.length > 20) {
+    state.recentNotes = state.recentNotes.slice(-20);
+  }
+
   const filePath = getStateFilePath(rootDir);
   fs.writeFileSync(filePath, JSON.stringify(state, null, 2), 'utf8');
   return state;

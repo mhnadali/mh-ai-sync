@@ -112,25 +112,43 @@ function importFrom(sourceType) {
     }
   }
 
+  const sourceFiles = {
+    claude: 'CLAUDE.md',
+    agents: 'AGENTS.md',
+    cursor: '.cursorrules'
+  };
+
+  const relFile = sourceFiles[sourceType];
+  if (!relFile) {
+    log(`✖ Unknown import source "${sourceType}". Supported sources: 'claude', 'agents', 'cursor'`, "\x1b[31m");
+    return;
+  }
+
+  const fullSourcePath = path.join(CWD, relFile);
+  if (!fs.existsSync(fullSourcePath)) {
+    log(`✖ Source file not found: ${relFile}`, "\x1b[31m");
+    return;
+  }
+
   let imported = JSON.parse(JSON.stringify(baseConfig));
 
-  if (sourceType === 'claude' && fs.existsSync(path.join(CWD, 'CLAUDE.md'))) {
-    const parsed = parseClaudeMd(fs.readFileSync(path.join(CWD, 'CLAUDE.md'), 'utf-8'));
+  if (sourceType === 'claude') {
+    const parsed = parseClaudeMd(fs.readFileSync(fullSourcePath, 'utf-8'));
     if (parsed.name) imported.project.name = parsed.name;
     if (parsed.overview) imported.project.overview = parsed.overview;
     if (Object.keys(parsed.commands).length) imported.commands = { ...imported.commands, ...parsed.commands };
     if (parsed.guidelines.agentRules.length) imported.guidelines.agentRules = parsed.guidelines.agentRules;
     if (parsed.guidelines.codeStyle.length) imported.guidelines.codeStyle = parsed.guidelines.codeStyle;
-  } else if (sourceType === 'agents' && fs.existsSync(path.join(CWD, 'AGENTS.md'))) {
-    const parsed = parseAgentsMd(fs.readFileSync(path.join(CWD, 'AGENTS.md'), 'utf-8'));
+  } else if (sourceType === 'agents') {
+    const parsed = parseAgentsMd(fs.readFileSync(fullSourcePath, 'utf-8'));
     if (parsed.name) imported.project.name = parsed.name;
     if (parsed.overview) imported.project.overview = parsed.overview;
     if (Object.keys(parsed.commands).length) imported.commands = { ...imported.commands, ...parsed.commands };
     if (parsed.guidelines.agentRules.length) imported.guidelines.agentRules = parsed.guidelines.agentRules;
     if (parsed.guidelines.codeStyle.length) imported.guidelines.codeStyle = parsed.guidelines.codeStyle;
     if (parsed.guidelines.gitPractices.length) imported.guidelines.gitPractices = parsed.guidelines.gitPractices;
-  } else if (sourceType === 'cursor' && fs.existsSync(path.join(CWD, '.cursorrules'))) {
-    const parsed = parseCursorRules(fs.readFileSync(path.join(CWD, '.cursorrules'), 'utf-8'));
+  } else if (sourceType === 'cursor') {
+    const parsed = parseCursorRules(fs.readFileSync(fullSourcePath, 'utf-8'));
     if (parsed.guidelines.agentRules.length) imported.guidelines.agentRules = parsed.guidelines.agentRules;
   }
   
@@ -174,7 +192,7 @@ function build(redact = false) {
   log('✔ Synchronized -> .github/copilot-instructions.md (Copilot)');
 
   // 7. .mcp.json (MCP Protocols & Tools)
-  fs.writeFileSync(path.join(CWD, '.mcp.json'), generateMcpConfig(config), 'utf-8');
+  fs.writeFileSync(path.join(CWD, '.mcp.json'), processContent(generateMcpConfig(config)), 'utf-8');
   log('✔ Synchronized -> .mcp.json (MCP Protocols & Tools)');
 
   // 8. .cursor/rules/*.mdc (Modern Cursor 2.0 Rules)
@@ -226,8 +244,12 @@ function audit(strict = false) {
 function watch() {
   log('Starting real-time live synchronization watcher...', "\x1b[36m");
   build();
-  startWatcher(CWD, () => {
-    build();
+  startWatcher(CWD, (changedFile) => {
+    if (changedFile && changedFile !== CONFIG_FILE) {
+      smartMerge(changedFile);
+    } else {
+      build();
+    }
   });
 }
 

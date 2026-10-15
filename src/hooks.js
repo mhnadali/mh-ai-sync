@@ -24,23 +24,31 @@ echo ""
 echo "\\033[1m\\033[36m[M.H. AI Sync]\\033[0m Running pre-commit AI context & security verification..."
 
 # 1. Security Scan (Block on leaked API keys, tokens, or private credentials)
-node bin/index.js audit --strict
+if [ -f "./bin/index.js" ]; then
+  node bin/index.js audit --strict
+else
+  npx --no-install mh-ai-sync audit --strict
+fi
 AUDIT_EXIT=$?
 if [ $AUDIT_EXIT -ne 0 ]; then
   echo ""
   echo "\\033[31m✖ [M.H. AI Sync Error] Commit rejected: Sensitive credentials or API keys found!\\033[0m"
-  echo "\\033[33m  Hint: Run 'node bin/index.js audit' to view findings or 'node bin/index.js build --redact' to auto-sanitize.\\033[0m"
+  echo "\\033[33m  Hint: Run 'mhai audit' to view findings or 'mhai build --redact' to auto-sanitize.\\033[0m"
   echo ""
   exit 1
 fi
 
 # 2. Synchronization Drift Check (Block on modified or un-synced AI instructions)
-node bin/index.js status --check
+if [ -f "./bin/index.js" ]; then
+  node bin/index.js status --check
+else
+  npx --no-install mh-ai-sync status --check
+fi
 STATUS_EXIT=$?
 if [ $STATUS_EXIT -ne 0 ]; then
   echo ""
   echo "\\033[31m✖ [M.H. AI Sync Error] Commit rejected: AI agent context drift detected!\\033[0m"
-  echo "\\033[33m  Hint: Run 'node bin/index.js build' to re-align all agent configurations before committing.\\033[0m"
+  echo "\\033[33m  Hint: Run 'mhai build' or 'mhai merge' to align agent configurations before committing.\\033[0m"
   echo ""
   exit 1
 fi
