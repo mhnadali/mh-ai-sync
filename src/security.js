@@ -70,6 +70,7 @@ function auditConfig(config, rootDir = process.cwd()) {
     'ANTIGRAVITY.md',
     '.cursorrules',
     '.windsurfrules',
+    '.mcp.json',
     path.join('.github', 'copilot-instructions.md')
   ];
 
@@ -113,6 +114,7 @@ function auditConfig(config, rootDir = process.cwd()) {
 
   return {
     findings,
+    totalIssues: findings.length,
     isSecure: findings.length === 0
   };
 }

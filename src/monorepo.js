@@ -177,6 +177,7 @@ function syncAllWorkspaces(rawRootConfig, rootDir = process.cwd(), taskBanner = 
   const results = [];
 
   const rootTaskState = loadTaskState(rootDir);
+  const effectiveBanner = taskBanner || generateTaskBanner(rootTaskState);
 
   for (const ws of workspaces) {
     const wsConfig = resolveWorkspaceConfig(rootConfig, ws);
@@ -190,16 +191,16 @@ function syncAllWorkspaces(rawRootConfig, rootDir = process.cwd(), taskBanner = 
     }
 
     // 1. CLAUDE.md
-    fs.writeFileSync(path.join(targetDir, 'CLAUDE.md'), generateClaudeMd(wsConfig, taskBanner), 'utf8');
+    fs.writeFileSync(path.join(targetDir, 'CLAUDE.md'), generateClaudeMd(wsConfig, effectiveBanner), 'utf8');
 
     // 2. AGENTS.md
-    fs.writeFileSync(path.join(targetDir, 'AGENTS.md'), generateAgentsMd(wsConfig, taskBanner), 'utf8');
+    fs.writeFileSync(path.join(targetDir, 'AGENTS.md'), generateAgentsMd(wsConfig, effectiveBanner), 'utf8');
 
     // 3. ANTIGRAVITY.md
-    fs.writeFileSync(path.join(targetDir, 'ANTIGRAVITY.md'), generateAntigravityConfig(wsConfig, taskBanner), 'utf8');
+    fs.writeFileSync(path.join(targetDir, 'ANTIGRAVITY.md'), generateAntigravityConfig(wsConfig, effectiveBanner), 'utf8');
 
     // 4. .cursorrules
-    fs.writeFileSync(path.join(targetDir, '.cursorrules'), generateCursorRules(wsConfig, taskBanner), 'utf8');
+    fs.writeFileSync(path.join(targetDir, '.cursorrules'), generateCursorRules(wsConfig, effectiveBanner), 'utf8');
 
     // 5. .windsurfrules
     fs.writeFileSync(path.join(targetDir, '.windsurfrules'), generateWindsurfRules(wsConfig), 'utf8');

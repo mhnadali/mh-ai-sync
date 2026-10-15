@@ -54,8 +54,7 @@ function detectStack(rootDir = process.cwd()) {
       const scripts = pkg.scripts || {};
       result.commands.install = `${pm} install`;
       if (scripts.build) result.commands.build = `${pm} run build`;
-      if (scripts.test) result.commands.test = `${pm} test`;
-      else result.commands.test = `${pm} test`;
+      result.commands.test = `${pm} test`;
       if (scripts.lint) result.commands.lint = `${pm} run lint`;
       if (scripts.dev) result.commands.dev = `${pm} run dev`;
       else if (scripts.start) result.commands.start = `${pm} start`;
@@ -99,7 +98,8 @@ function detectStack(rootDir = process.cwd()) {
 
     if (!result.commands.test) result.commands.test = `${runner} pytest`.trim();
     if (!result.commands.lint) result.commands.lint = `${runner} ruff check .`.trim();
-    if (!result.commands.dev) result.commands.dev = `${runner} python main.py`.trim();
+    const devCmd = runner === 'python' ? 'python main.py' : `${runner} python main.py`;
+    if (!result.commands.dev) result.commands.dev = devCmd.trim();
   }
 
   // 3. Check Rust

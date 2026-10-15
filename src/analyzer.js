@@ -129,6 +129,13 @@ function analyzePromptBudget(rawConfig) {
 
   healthScore = Math.max(0, Math.min(100, healthScore));
 
+  let rating = 'OPTIMAL';
+  if (healthScore < 60) {
+    rating = 'CRITICAL BLOAT';
+  } else if (healthScore < 85) {
+    rating = 'GOOD (NEEDS TUNING)';
+  }
+
   return {
     fileStats,
     totalTokens,
@@ -136,6 +143,7 @@ function analyzePromptBudget(rawConfig) {
     maxSingleToken,
     duplicates,
     healthScore,
+    rating,
     recommendations
   };
 }

@@ -44,7 +44,7 @@
     "workspaces": "node bin/index.js workspaces",
     "dashboard": "node bin/index.js dashboard",
     "ui": "node bin/index.js ui",
-    "test": "node test.js && node test_deep.js && node test_e2e.js && node test_phase1.js && node test_phase2.js && node test_phase3.js && node test_phase4.js && node test_phase5.js && node test_phase6.js && node test_phase7.js && node test_phase8.js && node test_phase9.js && node test_phase10.js && node test_audit_deep.js"
+    "test": "node test.js && node test_deep.js && node test_e2e.js && node test_phase1.js && node test_phase2.js && node test_phase3.js && node test_phase4.js && node test_phase5.js && node test_phase6.js && node test_phase7.js && node test_phase8.js && node test_phase9.js && node test_phase10.js && node test_deep_debug_v2.js && node test_audit_deep.js"
   },
   "keywords": [
     "ai-agent",

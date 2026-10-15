@@ -13,7 +13,7 @@ function sanitize(rawConfig) {
     ? config.skills
         .filter(s => s && typeof s === 'object' && typeof s.name === 'string')
         .map(s => ({
-          name: s.name.trim(),
+          name: s.name.trim().replace(/[/\\:*?"<>|]/g, '-').trim(),
           description: typeof s.description === 'string' ? s.description.trim() : 'General capability',
           instructions: typeof s.instructions === 'string' ? s.instructions.trim() : (typeof s.description === 'string' ? s.description.trim() : 'Follow standard project conventions.')
         }))
@@ -23,7 +23,7 @@ function sanitize(rawConfig) {
     ? config.modularRules
         .filter(r => r && typeof r === 'object' && typeof r.name === 'string')
         .map(r => ({
-          name: r.name.trim(),
+          name: r.name.trim().replace(/[/\\:*?"<>|]/g, '-').trim(),
           description: typeof r.description === 'string' ? r.description.trim() : 'Modular rule',
           globs: typeof r.globs === 'string' ? r.globs.trim() : '*',
           alwaysApply: typeof r.alwaysApply === 'boolean' ? r.alwaysApply : true,

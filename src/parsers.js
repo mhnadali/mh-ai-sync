@@ -22,7 +22,7 @@ function parseAgentsMd(content = "") {
     // Project Name / Header
     if (trimmed.startsWith("> Project:")) {
       result.name = trimmed.replace("> Project:", "").trim();
-    } else if (trimmed.startsWith("# ") && !result.name.length) {
+    } else if (trimmed.startsWith("# ") && (!result.name || result.name === 'AI-Augmented Project')) {
       const titleMatch = trimmed.replace("# ", "").replace("Configuration", "").replace("Rules", "").trim();
       if (titleMatch) result.name = titleMatch;
     } 
@@ -88,7 +88,19 @@ function parseCursorRules(content = "") {
   if (!content || typeof content !== 'string') {
     return { guidelines: { agentRules: [] } };
   }
-  const lines = content.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
+
+  let body = content;
+  // Safely strip YAML frontmatter if present (e.g. in MDC files)
+  const trimmedStart = body.trimStart();
+  if (trimmedStart.startsWith('---')) {
+    const afterFirst = trimmedStart.slice(3);
+    const secondIndex = afterFirst.indexOf('---');
+    if (secondIndex !== -1) {
+      body = afterFirst.slice(secondIndex + 3);
+    }
+  }
+
+  const lines = body.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
   const agentRules = lines.map(l => l.replace(/^[-*]\s+/, "").trim()).filter(l => l.length > 0);
   return {
     guidelines: {

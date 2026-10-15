@@ -14,7 +14,9 @@ function startWatcher(rootDir = process.cwd(), onSync = () => {}, debounceMs = 3
     'CLAUDE.md',
     'AGENTS.md',
     'ANTIGRAVITY.md',
-    '.cursorrules'
+    '.cursorrules',
+    '.windsurfrules',
+    '.mcp.json'
   ];
 
   let debounceTimer = null;

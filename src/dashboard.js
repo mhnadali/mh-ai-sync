@@ -184,9 +184,12 @@ function startTui(rootDir = process.cwd(), options = {}) {
 
   process.stdin.on('keypress', (str, key) => {
     if (key.ctrl && key.name === 'c') {
+      if (process.stdin.isTTY) process.stdin.setRawMode(false);
       process.exit();
     }
     if (key.name === 'q') {
+      if (process.stdin.isTTY) process.stdin.setRawMode(false);
+      process.stdin.pause();
       console.log('\n👋 Exiting M.H. AI Sync Dashboard.');
       process.exit(0);
     }
@@ -213,6 +216,22 @@ function startTui(rootDir = process.cwd(), options = {}) {
         execSync(`node "${path.join(__dirname, '..', 'bin', 'index.js')}" audit`, { cwd: rootDir, stdio: 'ignore' });
       } catch {}
       refresh();
+    }
+    if (key.name === 't') {
+      if (process.stdin.isTTY) process.stdin.setRawMode(false);
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      rl.question('\n\x1b[36mEnter new active task goal (or press Enter to cancel):\x1b[0m ', (ans) => {
+        rl.close();
+        if (process.stdin.isTTY) process.stdin.setRawMode(true);
+        if (ans && ans.trim()) {
+          setActiveTask(ans.trim(), {}, rootDir);
+          try {
+            const { execSync } = require('child_process');
+            execSync(`node "${path.join(__dirname, '..', 'bin', 'index.js')}" build`, { cwd: rootDir, stdio: 'ignore' });
+          } catch {}
+        }
+        refresh();
+      });
     }
   });
 }
@@ -281,7 +300,13 @@ function getWebDashboardHtml() {
     </header>
 
     <div id="taskContainer" class="task-box">
-      <h4>🧠 Active Shared Task Bridge</h4>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h4>🧠 Active Shared Task Bridge</h4>
+        <div style="display: flex; gap: 6px;">
+          <button style="padding: 4px 8px; font-size: 11px;" onclick="promptTask()">✏️ Set Task</button>
+          <button style="padding: 4px 8px; font-size: 11px;" onclick="clearTask()">✖ Clear</button>
+        </div>
+      </div>
       <p id="taskContent" style="font-size: 14px; font-weight: 500;">Loading shared agent memory...</p>
     </div>
 
@@ -377,6 +402,30 @@ function getWebDashboardHtml() {
     async function triggerAction(action) {
       await fetch('/api/' + action, { method: 'POST' });
       await loadDashboard();
+    }
+
+    async function promptTask() {
+      const task = prompt("Enter new active goal to broadcast across Claude, Cursor, Antigravity:");
+      if (task && task.trim()) {
+        const note = prompt("Optional progress note (or leave blank):") || "";
+        await fetch('/api/task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'set', task: task.trim(), note: note.trim() })
+        });
+        await triggerAction('sync');
+      }
+    }
+
+    async function clearTask() {
+      if (confirm("Reset active task across all AI agents?")) {
+        await fetch('/api/task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clear' })
+        });
+        await triggerAction('sync');
+      }
     }
 
     loadDashboard();
