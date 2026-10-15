@@ -28,6 +28,10 @@ const {
   formatPresetsList
 } = require('../src/mcpHub');
 const {
+  inspectDiffs,
+  mergeAllDriftedFiles
+} = require('../src/merger');
+const {
   sanitize,
   generateClaudeMd,
   generateAgentsMd,
@@ -356,9 +360,53 @@ function manageMcp(subcommand, arg1, ...restArgs) {
   }
 }
 
+function showDiff(filterFile = null) {
+  const config = loadConfig();
+  const diffs = inspectDiffs(config, CWD, filterFile);
+
+  if (diffs.length === 0) {
+    log('✔ No drift detected. All target files are identical to canonical state.');
+    return;
+  }
+
+  console.log('\n\x1b[1m\x1b[36m=== M.H. AI Sync Unified Diff Report ===\x1b[0m\n');
+  for (const item of diffs) {
+    console.log(item.diff);
+    console.log('\n----------------------------------------\n');
+  }
+  log(`Found drift in ${diffs.length} file(s).`, "\x1b[33m");
+  log('💡 Run `node bin/index.js merge` to absorb these changes into mhai.config.json, or `build` to overwrite with canonical state.');
+}
+
+function smartMerge(filterFile = null) {
+  const config = loadConfig();
+  log('Analyzing drifted files for rules and command changes...', "\x1b[36m");
+  const mergeResult = mergeAllDriftedFiles(config, CWD, filterFile);
+
+  if (!mergeResult.hasMerged) {
+    log('ℹ No new rules or command updates were found to merge.');
+    build();
+    return;
+  }
+
+  for (const item of mergeResult.mergedFiles) {
+    log(`✔ Merged updates from ${item.file}:`);
+    for (const ch of item.changes) {
+      if (ch.type === 'command') {
+        console.log(`    • Updated command \x1b[32m"${ch.key}"\x1b[0m: ${ch.newVal}`);
+      } else if (ch.type === 'rule') {
+        console.log(`    • Absorbed new rule into \x1b[32m${ch.category}\x1b[0m: "${ch.rule}"`);
+      }
+    }
+  }
+
+  log('✔ Successfully absorbed changes into mhai.config.json');
+  build();
+}
+
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v1.7.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v1.8.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
@@ -376,6 +424,8 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                 - .windsurfrules (Windsurf)
                 - .github/copilot-instructions.md (GitHub Copilot)
                 - .mcp.json (Model Context Protocol)
+  \x1b[32mdiff\x1b[0m [file]    Show unified line-by-line colored diff of modified files on disk
+  \x1b[32mmerge\x1b[0m [file]   3-Way merge: absorb manual/AI edits on disk back into mhai.config.json
   \x1b[32mmcp\x1b[0m           Manage Model Context Protocol (MCP) servers & Marketplace:
                 - mcp                  : List configured MCP servers
                 - mcp presets          : Browse built-in MCP server marketplace
@@ -387,7 +437,7 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                 - task clear               : Mark task finished and reset
                 - task                     : Show current shared task status
   \x1b[32mwatch\x1b[0m         Start real-time live watcher to auto-sync on file changes
-  \x1b[32mstatus\x1b[0m (diff)  Check synchronization status and detect rule drift
+  \x1b[32mstatus\x1b[0m        Check synchronization status and detect rule drift
   \x1b[32maudit\x1b[0m (lint)   Scan instructions for exposed API keys, tokens & credentials
   \x1b[32manalyze\x1b[0m (tokens) Calculate token budget consumption & prompt health score
   \x1b[32mhook install\x1b[0m   Install native Git pre-commit hook to guard local commits
@@ -400,6 +450,7 @@ A Unified Bridge for Multi-Agent AI Coding Systems
   --check       When running 'status', exit with code 1 if drift or missing files detected
   --strict      When running 'audit', exit with code 1 if any credentials are found
   --redact      When running 'build', automatically redact detected secrets
+  --merge       When running 'build' or 'sync', automatically merge disk edits first
 `);
 }
 
@@ -412,13 +463,22 @@ switch (command) {
     break;
   case 'build':
   case 'sync':
-    build(args.includes('--redact'));
+    if (args.includes('--merge')) {
+      smartMerge();
+    } else {
+      build(args.includes('--redact'));
+    }
+    break;
+  case 'diff':
+    showDiff(args[1]);
+    break;
+  case 'merge':
+    smartMerge(args[1]);
     break;
   case 'watch':
     watch();
     break;
   case 'status':
-  case 'diff':
     status(args.includes('--check'));
     break;
   case 'audit':

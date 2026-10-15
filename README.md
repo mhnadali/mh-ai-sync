@@ -149,7 +149,21 @@ node bin/index.js mcp
 node bin/index.js mcp remove fetch
 ```
 
-### 9. Check Sync Status & Drift Detection
+### 9. Unified Line Diff & 3-Way Merge Engine
+Inspect exact line-by-line differences between files on disk and canonical configurations, and absorb rogue rules back into `mhai.config.json`:
+```bash
+# View colored unified diffs for all drifted files (or a specific file)
+node bin/index.js diff
+node bin/index.js diff CLAUDE.md
+
+# Intelligently absorb manual/AI edits on disk back into canonical schema & sync all agents
+node bin/index.js merge
+
+# Auto-merge before building:
+node bin/index.js sync --merge
+```
+
+### 10. Check Sync Status & Drift Detection
 Inspect whether any AI config has drifted or been modified manually:
 ```bash
 node bin/index.js status
@@ -158,13 +172,13 @@ node bin/index.js status
 node bin/index.js status --check
 ```
 
-### 10. Install GitHub Actions CI/CD Workflow
+### 11. Install GitHub Actions CI/CD Workflow
 Automatically generate `.github/workflows/ai-sync-check.yml` to block out-of-sync PRs or secret leaks:
 ```bash
 node bin/index.js ci
 ```
 
-### 11. Bidirectional Import from Legacy Configs
+### 12. Bidirectional Import from Legacy Configs
 Import your existing `CLAUDE.md` or `.cursorrules` files into the unified schema:
 ```bash
 # Import from Claude Code configuration
