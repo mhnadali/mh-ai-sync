@@ -132,7 +132,24 @@ node bin/index.js task
 node bin/index.js task clear
 ```
 
-### 8. Check Sync Status & Drift Detection
+### 8. MCP Hub & Tool Marketplace Integrator
+Easily browse, install, and manage Model Context Protocol (MCP) servers with automatic synchronization into `.mcp.json`:
+```bash
+# Browse built-in MCP server catalog/marketplace
+node bin/index.js mcp presets
+
+# Install an MCP server from presets (e.g. filesystem, fetch, github, postgres, sqlite, brave-search, memory)
+node bin/index.js mcp add fetch
+node bin/index.js mcp add sqlite
+
+# List configured MCP servers
+node bin/index.js mcp
+
+# Remove an MCP server
+node bin/index.js mcp remove fetch
+```
+
+### 9. Check Sync Status & Drift Detection
 Inspect whether any AI config has drifted or been modified manually:
 ```bash
 node bin/index.js status
@@ -141,13 +158,13 @@ node bin/index.js status
 node bin/index.js status --check
 ```
 
-### 9. Install GitHub Actions CI/CD Workflow
+### 10. Install GitHub Actions CI/CD Workflow
 Automatically generate `.github/workflows/ai-sync-check.yml` to block out-of-sync PRs or secret leaks:
 ```bash
 node bin/index.js ci
 ```
 
-### 10. Bidirectional Import from Legacy Configs
+### 11. Bidirectional Import from Legacy Configs
 Import your existing `CLAUDE.md` or `.cursorrules` files into the unified schema:
 ```bash
 # Import from Claude Code configuration

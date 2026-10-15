@@ -19,6 +19,15 @@ const {
   generateTaskBanner
 } = require('../src/task');
 const {
+  getMcpPresets,
+  listConfiguredServers,
+  addMcpServer,
+  removeMcpServer,
+  saveMcpConfig,
+  formatMcpList,
+  formatPresetsList
+} = require('../src/mcpHub');
+const {
   sanitize,
   generateClaudeMd,
   generateAgentsMd,
@@ -301,9 +310,55 @@ function analyze() {
   console.log(formatAnalysisReport(analysis));
 }
 
+function manageMcp(subcommand, arg1, ...restArgs) {
+  const config = loadConfig();
+
+  if (subcommand === 'presets' || subcommand === 'hub') {
+    console.log(formatPresetsList());
+  } else if (subcommand === 'add' || subcommand === 'install') {
+    if (!arg1) {
+      log('✖ Please specify an MCP server preset or name: mhai mcp add <name>', "\x1b[31m");
+      log('💡 Run `node bin/index.js mcp presets` to view all available presets.');
+      process.exit(1);
+    }
+    try {
+      const customOptions = {};
+      if (restArgs.length > 0) {
+        customOptions.args = restArgs;
+      }
+      const { config: updatedConfig, serverDef, isPreset } = addMcpServer(config, arg1, customOptions);
+      saveMcpConfig(updatedConfig, CWD);
+      log(`✔ Added MCP server -> "${arg1}" ${isPreset ? '(from preset)' : '(custom)'}`);
+      if (serverDef.env && Object.keys(serverDef.env).length > 0) {
+        log(`ℹ Note: Requires environment variables: ${Object.keys(serverDef.env).join(', ')}`, "\x1b[33m");
+      }
+      build();
+    } catch (err) {
+      log(`✖ Failed to add MCP server: ${err.message}`, "\x1b[31m");
+      process.exit(1);
+    }
+  } else if (subcommand === 'remove' || subcommand === 'rm' || subcommand === 'delete') {
+    if (!arg1) {
+      log('✖ Please specify the server name to remove: mhai mcp remove <name>', "\x1b[31m");
+      process.exit(1);
+    }
+    const { config: updatedConfig, removed, reason } = removeMcpServer(config, arg1);
+    if (!removed) {
+      log(`✖ ${reason}`, "\x1b[31m");
+      process.exit(1);
+    }
+    saveMcpConfig(updatedConfig, CWD);
+    log(`✔ Removed MCP server -> "${arg1}"`);
+    build();
+  } else {
+    // default: list
+    console.log(formatMcpList(config));
+  }
+}
+
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v1.6.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v1.7.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
@@ -321,6 +376,11 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                 - .windsurfrules (Windsurf)
                 - .github/copilot-instructions.md (GitHub Copilot)
                 - .mcp.json (Model Context Protocol)
+  \x1b[32mmcp\x1b[0m           Manage Model Context Protocol (MCP) servers & Marketplace:
+                - mcp                  : List configured MCP servers
+                - mcp presets          : Browse built-in MCP server marketplace
+                - mcp add <preset>     : Install MCP server and auto-sync .mcp.json
+                - mcp remove <name>    : Remove MCP server and update .mcp.json
   \x1b[32mtask\x1b[0m (memory)  Manage shared active task memory across all AI agents:
                 - task set "<goal>" [note] : Broadcast new task to all agents
                 - task note "<note>"       : Append progress note
@@ -369,6 +429,9 @@ switch (command) {
   case 'tokens':
   case 'token':
     analyze();
+    break;
+  case 'mcp':
+    manageMcp(args[1], args[2], ...args.slice(3));
     break;
   case 'task':
   case 'memory':
