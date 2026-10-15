@@ -31,6 +31,9 @@ function sanitize(rawConfig) {
         }))
     : [];
 
+  const remotes = (config.remotes && typeof config.remotes === 'object' && !Array.isArray(config.remotes)) ? config.remotes : {};
+  const lockedGuidelines = Array.isArray(config.lockedGuidelines) ? config.lockedGuidelines.filter(x => typeof x === 'string') : [];
+
   return {
     project: {
       name: typeof project.name === 'string' && project.name.trim() ? project.name.trim() : "AI-Augmented Project",
@@ -49,6 +52,8 @@ function sanitize(rawConfig) {
     skills,
     modularRules,
     mcpServers,
+    remotes,
+    lockedGuidelines,
     settings: {
       strategy: config.settings?.strategy === 'reference' ? 'reference' : 'compile'
     }

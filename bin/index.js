@@ -44,6 +44,15 @@ const {
   renderTuiDashboard
 } = require('../src/dashboard');
 const {
+  addRemote,
+  removeRemote,
+  listRemotes,
+  pullRemote,
+  checkCompliance,
+  formatRemoteList,
+  formatComplianceReport
+} = require('../src/remote');
+const {
   sanitize,
   generateClaudeMd,
   generateAgentsMd,
@@ -497,9 +506,87 @@ function smartMerge(filterFile = null) {
   build();
 }
 
+async function manageRemote(subAction, remoteName, remoteUrl, ...extraArgs) {
+  try {
+    if (!subAction || subAction === 'list') {
+      const remotes = listRemotes(CWD);
+      console.log(formatRemoteList(remotes));
+      return;
+    }
+
+    if (subAction === 'add') {
+      if (!remoteName || !remoteUrl) {
+        log('Usage: mhai remote add <name> <url-or-git-or-path> [--locked] [--branch <branch>]', '\x1b[31m');
+        process.exit(1);
+      }
+      const isLocked = extraArgs.includes('--locked');
+      const branchIdx = extraArgs.indexOf('--branch');
+      const branch = branchIdx !== -1 && extraArgs[branchIdx + 1] ? extraArgs[branchIdx + 1] : 'main';
+
+      const res = addRemote(remoteName, remoteUrl, { locked: isLocked, branch }, CWD);
+      log(`Remote registry "${res.remote.name}" successfully added! (${res.remote.url})`);
+      if (res.remote.locked) {
+        log('Policy locking enabled: Remote rules will be marked as locked in local configuration.', '\x1b[33m');
+      }
+      return;
+    }
+
+    if (subAction === 'remove' || subAction === 'rm') {
+      if (!remoteName) {
+        log('Usage: mhai remote remove <name>', '\x1b[31m');
+        process.exit(1);
+      }
+      removeRemote(remoteName, CWD);
+      log(`Remote registry "${remoteName}" removed.`);
+      return;
+    }
+
+    if (subAction === 'check' || subAction === 'audit') {
+      if (!remoteName) {
+        log('Usage: mhai remote check <name>', '\x1b[31m');
+        process.exit(1);
+      }
+      log(`Verifying team standards compliance against "${remoteName}"...`);
+      const compliance = await checkCompliance(remoteName, CWD);
+      console.log(formatComplianceReport(compliance));
+      if (!compliance.isCompliant) {
+        process.exit(1);
+      }
+      return;
+    }
+
+    log(`Unknown remote sub-command: "${subAction}". Available: list, add, remove, check`, '\x1b[31m');
+  } catch (err) {
+    log(`Remote error: ${err.message}`, '\x1b[31m');
+    process.exit(1);
+  }
+}
+
+async function runPull(remoteName, ...extraArgs) {
+  try {
+    const remotes = listRemotes(CWD);
+    if (remotes.length === 0) {
+      log('No remote registries configured. Use `mhai remote add <name> <url>` first.', '\x1b[31m');
+      process.exit(1);
+    }
+
+    const targetRemote = remoteName || remotes[0].name;
+    log(`Pulling and merging standards from remote registry "${targetRemote}"...`);
+    const lockAll = extraArgs.includes('--lock') || extraArgs.includes('--locked');
+    const result = await pullRemote(targetRemote, { lockAll }, CWD);
+
+    log(`Successfully synchronized with "${targetRemote}"! (${result.changesCount} updates merged, ${result.totalLockedRules} total locked rules)`);
+    log('Compiling updated team standards to all agent contexts...');
+    build();
+  } catch (err) {
+    log(`Pull failed: ${err.message}`, '\x1b[31m');
+    process.exit(1);
+  }
+}
+
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v2.0.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v2.1.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
@@ -519,6 +606,12 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                 - .mcp.json (Model Context Protocol)
   \x1b[32mdiff\x1b[0m [file]    Show unified line-by-line colored diff of modified files on disk
   \x1b[32mmerge\x1b[0m [file]   3-Way merge: absorb manual/AI edits on disk back into mhai.config.json
+  \x1b[32mremote\x1b[0m        Manage remote team standards & organization registries (Phase 11):
+                - remote list                 : List configured remote standards registries
+                - remote add <name> <url>     : Add Git repository, URL, or local standards path
+                - remote remove <name>        : Remove remote registry
+                - remote check <name>         : Audit local compliance against mandatory team rules
+  \x1b[32mpull\x1b[0m [name]    Pull team standards from remote registry & auto-compile agent files
   \x1b[32mmcp\x1b[0m           Manage Model Context Protocol (MCP) servers & Marketplace:
                 - mcp                  : List configured MCP servers
                 - mcp presets          : Browse built-in MCP server marketplace
@@ -621,6 +714,17 @@ switch (command) {
   case 'hook':
   case 'hooks':
     manageHook(args[1] || 'status');
+    break;
+  case 'remote':
+  case 'remotes':
+    (async () => {
+      await manageRemote(args[1], args[2], args[3], ...args.slice(4));
+    })();
+    break;
+  case 'pull':
+    (async () => {
+      await runPull(args[1], ...args.slice(2));
+    })();
     break;
   case 'ci':
   case 'github-action':

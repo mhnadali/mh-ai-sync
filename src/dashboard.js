@@ -16,6 +16,7 @@ const { analyzePromptBudget } = require('./analyzer');
 const { loadTaskState, setActiveTask, addTaskNote, clearActiveTask } = require('./task');
 const { listConfiguredServers } = require('./mcpHub');
 const { discoverWorkspaces, checkWorkspacesStatus } = require('./monorepo');
+const { listRemotes } = require('./remote');
 
 /**
  * Aggregates all project state for both TUI and Web dashboards.
@@ -37,6 +38,7 @@ function getDashboardState(rootDir = process.cwd()) {
   const mcpServers = listConfiguredServers(config);
   const workspaces = discoverWorkspaces(rootDir);
   const workspacesStatus = workspaces.length > 0 ? checkWorkspacesStatus(config, rootDir) : null;
+  const remotesList = listRemotes(rootDir);
 
   return {
     timestamp: new Date().toISOString(),
@@ -78,6 +80,10 @@ function getDashboardState(rootDir = process.cwd()) {
       count: workspaces.length,
       list: workspaces.map(w => ({ name: w.name, path: w.relativePath, stack: w.techStack })),
       isAllClean: workspacesStatus ? workspacesStatus.isAllClean : true
+    },
+    remotes: {
+      count: remotesList.length,
+      list: remotesList
     }
   };
 }
@@ -147,6 +153,11 @@ function renderTuiDashboard(state) {
   if (state.workspaces.count > 0) {
     const wsBadge = state.workspaces.isAllClean ? '\x1b[32m✔ All Clean\x1b[0m' : '\x1b[33m⚡ Drift Detected\x1b[0m';
     lines.push(`\x1b[1mWorkspaces:\x1b[0m    \x1b[36m${state.workspaces.count} subpackages\x1b[0m (${wsBadge})`);
+  }
+
+  if (state.remotes && state.remotes.count > 0) {
+    const remoteNames = state.remotes.list.map(r => r.name).join(', ');
+    lines.push(`\x1b[1mTeam Remotes:\x1b[0m  \x1b[36m${state.remotes.count} linked\x1b[0m (${remoteNames})`);
   }
   lines.push(`\x1b[90m${hr}\x1b[0m`);
 
@@ -480,6 +491,19 @@ function createDashboardServer(rootDir = process.cwd(), port = 3840) {
         execSync(`node "${path.join(__dirname, '..', 'bin', 'index.js')}" merge`, { cwd: rootDir, stdio: 'ignore' });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, message: 'Absorbed manual drift into canonical state' }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+      return;
+    }
+
+    if (url.pathname === '/api/pull' && req.method === 'POST') {
+      try {
+        const { execSync } = require('child_process');
+        execSync(`node "${path.join(__dirname, '..', 'bin', 'index.js')}" pull`, { cwd: rootDir, stdio: 'ignore' });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Pulled team standards from remote registry' }));
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: err.message }));

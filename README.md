@@ -225,6 +225,22 @@ node bin/index.js import cursor
 node bin/index.js import agents
 ```
 
+### 15. Team & Remote Standards Registry (Phase 11)
+Synchronize organization-wide AI guidelines, security baselines, and shared MCP servers from a centralized Git repo, URL, or shared network folder:
+```bash
+# Add a remote team standards registry (with policy locking)
+node bin/index.js remote add org-standards https://github.com/my-org/ai-guidelines.git --locked
+
+# List all configured remote registries
+node bin/index.js remote list
+
+# Pull and merge remote team standards into local project configuration
+node bin/index.js pull org-standards
+
+# Audit local project compliance against mandatory team policies
+node bin/index.js remote check org-standards
+```
+
 ---
 
 ## ⚙️ Configuration Schema (`mhai.config.json`)
