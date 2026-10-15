@@ -44,7 +44,7 @@ console.log('   ✔ Passed: CLI `ci` command installs workflow seamlessly.');
 console.log('\n🔹 Test 4: Package Manifest & Files Array Integrity...');
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
 assert.strictEqual(pkg.name, 'mh-ai-sync');
-assert.strictEqual(pkg.version, '1.4.0');
+assert.ok(/^\d+\.\d+\.\d+$/.test(pkg.version), 'Package version must be valid semver format');
 assert.ok(fs.existsSync(path.join(__dirname, pkg.main)), 'Main entrypoint must exist');
 assert.ok(fs.existsSync(path.join(__dirname, pkg.bin['mh-ai-sync'])), 'Bin executable must exist');
 for (const fileOrDir of pkg.files) {

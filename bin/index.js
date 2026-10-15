@@ -9,6 +9,8 @@ const { checkStatus, formatStatusReport } = require('../src/status');
 const { auditConfig, formatAuditReport, redactSecrets } = require('../src/security');
 const { startWatcher } = require('../src/watcher');
 const { installGitHubAction } = require('../src/ci');
+const { installHook, uninstallHook, isHookInstalled } = require('../src/hooks');
+const { analyzePromptBudget, formatAnalysisReport } = require('../src/analyzer');
 const {
   sanitize,
   generateClaudeMd,
@@ -209,13 +211,47 @@ function setupCi() {
   log('✨ Your repository will now automatically enforce AI sync & secret checks on every PR!', "\x1b[36m");
 }
 
+function manageHook(action = 'install') {
+  if (action === 'install') {
+    try {
+      const res = installHook(CWD);
+      log(`✔ Installed native Git pre-commit hook -> ${res.relativePath}`);
+      log('Local commits will now automatically enforce secret audit & drift checks!', "\x1b[36m");
+    } catch (err) {
+      log(`✖ Failed to install Git hook: ${err.message}`, "\x1b[31m");
+      process.exit(1);
+    }
+  } else if (action === 'uninstall') {
+    try {
+      const res = uninstallHook(CWD);
+      if (res.removed) {
+        log('✔ Removed M.H. AI Sync pre-commit hook.');
+      } else {
+        log(`ℹ ${res.reason}.`, "\x1b[33m");
+      }
+    } catch (err) {
+      log(`✖ Failed to uninstall Git hook: ${err.message}`, "\x1b[31m");
+      process.exit(1);
+    }
+  } else {
+    const installed = isHookInstalled(CWD);
+    log(`Pre-commit Git Hook Status: ${installed ? '\x1b[32mActive (Installed)\x1b[0m' : '\x1b[33mNot Installed\x1b[0m'}`);
+  }
+}
+
+function analyze() {
+  const config = loadConfig();
+  const analysis = analyzePromptBudget(config);
+  console.log(formatAnalysisReport(analysis));
+}
+
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v1.4.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v1.5.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
-  node bin/index.js <command> [options]
+  node bin/index.js <command> [subcommand] [options]
 
 \x1b[1mCOMMANDS:\x1b[0m
   \x1b[32minit\x1b[0m          Auto-detect project stack & create customized mhai.config.json
@@ -232,6 +268,9 @@ A Unified Bridge for Multi-Agent AI Coding Systems
   \x1b[32mwatch\x1b[0m         Start real-time live watcher to auto-sync on file changes
   \x1b[32mstatus\x1b[0m (diff)  Check synchronization status and detect rule drift
   \x1b[32maudit\x1b[0m (lint)   Scan instructions for exposed API keys, tokens & credentials
+  \x1b[32manalyze\x1b[0m (tokens) Calculate token budget consumption & prompt health score
+  \x1b[32mhook install\x1b[0m   Install native Git pre-commit hook to guard local commits
+  \x1b[32mhook uninstall\x1b[0m Remove native Git pre-commit hook
   \x1b[32mci\x1b[0m (github-action) Install GitHub Actions workflow for PR verification
   \x1b[32mimport <src>\x1b[0m   Import from 'claude', 'cursor', or 'agents' into mhai.config.json
   \x1b[32mhelp\x1b[0m           Show this help menu
@@ -264,6 +303,15 @@ switch (command) {
   case 'audit':
   case 'lint':
     audit(args.includes('--strict'));
+    break;
+  case 'analyze':
+  case 'tokens':
+  case 'token':
+    analyze();
+    break;
+  case 'hook':
+  case 'hooks':
+    manageHook(args[1] || 'status');
     break;
   case 'ci':
   case 'github-action':
