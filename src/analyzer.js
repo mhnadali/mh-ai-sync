@@ -5,6 +5,7 @@
  */
 
 const {
+  sanitize,
   generateClaudeMd,
   generateAgentsMd,
   generateAntigravityConfig,
@@ -35,14 +36,15 @@ function normalizeRuleText(text = "") {
     .trim();
 }
 
-function findDuplicateRules(config) {
+function findDuplicateRules(rawConfig) {
+  const config = sanitize(rawConfig);
   const allRules = [];
   const duplicates = [];
 
   const sources = [
-    { category: 'codeStyle', items: config.guidelines?.codeStyle || [] },
-    { category: 'gitPractices', items: config.guidelines?.gitPractices || [] },
-    { category: 'agentRules', items: config.guidelines?.agentRules || [] }
+    { category: 'codeStyle', items: config.guidelines.codeStyle || [] },
+    { category: 'gitPractices', items: config.guidelines.gitPractices || [] },
+    { category: 'agentRules', items: config.guidelines.agentRules || [] }
   ];
 
   for (const src of sources) {
@@ -66,7 +68,8 @@ function findDuplicateRules(config) {
   return duplicates;
 }
 
-function analyzePromptBudget(config) {
+function analyzePromptBudget(rawConfig) {
+  const config = sanitize(rawConfig);
   const targets = [
     { name: 'CLAUDE.md', content: generateClaudeMd(config) },
     { name: 'AGENTS.md', content: generateAgentsMd(config) },

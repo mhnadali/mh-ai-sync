@@ -81,6 +81,36 @@ function auditConfig(config, rootDir = process.cwd()) {
     }
   }
 
+  // 3. Audit modular cursor rules
+  const cursorRulesDir = path.join(rootDir, '.cursor', 'rules');
+  if (fs.existsSync(cursorRulesDir)) {
+    try {
+      const files = fs.readdirSync(cursorRulesDir);
+      for (const file of files) {
+        if (file.endsWith('.mdc')) {
+          const fullPath = path.join(cursorRulesDir, file);
+          const content = fs.readFileSync(fullPath, 'utf8');
+          findings.push(...scanText(content, path.join('.cursor', 'rules', file)));
+        }
+      }
+    } catch {}
+  }
+
+  // 4. Audit modular skills
+  const skillsDir = path.join(rootDir, 'skills');
+  if (fs.existsSync(skillsDir)) {
+    try {
+      const skillDirs = fs.readdirSync(skillsDir);
+      for (const sDir of skillDirs) {
+        const skillFile = path.join(skillsDir, sDir, 'SKILL.md');
+        if (fs.existsSync(skillFile)) {
+          const content = fs.readFileSync(skillFile, 'utf8');
+          findings.push(...scanText(content, path.join('skills', sDir, 'SKILL.md')));
+        }
+      }
+    } catch {}
+  }
+
   return {
     findings,
     isSecure: findings.length === 0

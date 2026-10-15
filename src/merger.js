@@ -104,8 +104,29 @@ function getExpectedFileTargets(config, rootDir = process.cwd()) {
     { name: 'ANTIGRAVITY.md', parser: parseAgentsMd, expected: normalizeContent(generateAntigravityConfig(config, taskBanner)) },
     { name: '.cursorrules', parser: parseCursorRules, expected: normalizeContent(generateCursorRules(config, taskBanner)) },
     { name: '.windsurfrules', parser: parseAgentsMd, expected: normalizeContent(generateWindsurfRules(config)) },
-    { name: path.join('.github', 'copilot-instructions.md'), parser: parseAgentsMd, expected: normalizeContent(generateCopilotInstructions(config)) }
+    { name: path.join('.github', 'copilot-instructions.md'), parser: parseAgentsMd, expected: normalizeContent(generateCopilotInstructions(config)) },
+    { name: '.mcp.json', expected: normalizeContent(generateMcpConfig(config)) }
   ];
+
+  // Add Modular Cursor MDC Rules
+  const mdcRules = generateCursorMdcRules(config);
+  for (const [filename, content] of Object.entries(mdcRules)) {
+    targets.push({
+      name: path.join('.cursor', 'rules', filename),
+      parser: parseCursorRules,
+      expected: normalizeContent(content)
+    });
+  }
+
+  // Add Antigravity & Hermes Skills
+  const skillFiles = generateSkillFiles(config);
+  for (const [relPath, content] of Object.entries(skillFiles)) {
+    targets.push({
+      name: relPath,
+      parser: parseAgentsMd,
+      expected: normalizeContent(content)
+    });
+  }
 
   return targets;
 }
@@ -150,8 +171,34 @@ function mergeFileIntoConfig(targetFileName, actualContent, rawConfig) {
   const config = JSON.parse(JSON.stringify(sanitize(rawConfig)));
   const changes = [];
 
-  let parsed;
   const lowerName = targetFileName.toLowerCase();
+
+  // Support .mcp.json merging
+  if (lowerName.endsWith('.mcp.json')) {
+    try {
+      const parsedMcp = JSON.parse(actualContent);
+      if (parsedMcp.mcpServers && typeof parsedMcp.mcpServers === 'object') {
+        if (!config.mcpServers) config.mcpServers = {};
+        for (const [sName, sDef] of Object.entries(parsedMcp.mcpServers)) {
+          if (sDef && typeof sDef === 'object') {
+            const existing = config.mcpServers[sName];
+            if (!existing || JSON.stringify(existing) !== JSON.stringify(sDef)) {
+              config.mcpServers[sName] = sDef;
+              changes.push({
+                type: 'mcpServer',
+                key: sName,
+                oldVal: existing || null,
+                newVal: sDef
+              });
+            }
+          }
+        }
+      }
+    } catch {}
+    return { config, changes };
+  }
+
+  let parsed;
   if (lowerName.includes('cursor')) {
     parsed = parseCursorRules(actualContent);
   } else if (lowerName.includes('claude')) {

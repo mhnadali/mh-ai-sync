@@ -40,7 +40,19 @@ function parseAgentsMd(content = "") {
     } else if (trimmed.startsWith("### Agent Constraints")) {
       currentSection = "agentRules";
     } 
-    // Command Matching (Handles both within commands section or anywhere with explicit key:val code formatting)
+    // Command Matching: matches key: value within commands section (with or without backticks/markdown)
+    else if (currentSection === "commands" && /^[-*]\s+/.test(trimmed) && trimmed.includes(':')) {
+      const withoutBullet = trimmed.replace(/^[-*]\s+/, '');
+      const colonIdx = withoutBullet.indexOf(':');
+      if (colonIdx > 0) {
+        const rawKey = withoutBullet.slice(0, colonIdx).replace(/[`*]/g, '').trim().toLowerCase().replace(/\s+/g, '_');
+        const rawVal = withoutBullet.slice(colonIdx + 1).trim().replace(/^[`*]+|[`*]+$/g, '').trim();
+        if (rawKey && rawVal) {
+          result.commands[rawKey] = rawVal;
+        }
+      }
+    }
+    // Also match explicit key:val code formatting anywhere across document
     else if (/^[-*]\s*[`*]+([^`*:]+)[`*]+:\s*[`*]?([^`*]+)[`*]?/.test(trimmed)) {
       const match = trimmed.match(/^[-*]\s*[`*]+([^`*:]+)[`*]+:\s*[`*]?([^`*]+)[`*]?/);
       if (match) {
@@ -77,9 +89,10 @@ function parseCursorRules(content = "") {
     return { guidelines: { agentRules: [] } };
   }
   const lines = content.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
+  const agentRules = lines.map(l => l.replace(/^[-*]\s+/, "").trim()).filter(l => l.length > 0);
   return {
     guidelines: {
-      agentRules: lines.filter(l => l.startsWith('-') || l.startsWith('*')).map(l => l.replace(/^[-*]\s+/, ""))
+      agentRules
     }
   };
 }

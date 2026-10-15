@@ -67,10 +67,11 @@ function detectStack(rootDir = process.cwd()) {
   // 2. Check Python
   const pyprojectPath = path.join(rootDir, 'pyproject.toml');
   const reqsPath = path.join(rootDir, 'requirements.txt');
+  const reqsDevPath = path.join(rootDir, 'requirements-dev.txt');
   const pipfilePath = path.join(rootDir, 'Pipfile');
   const setupPyPath = path.join(rootDir, 'setup.py');
 
-  if (fs.existsSync(pyprojectPath) || fs.existsSync(reqsPath) || fs.existsSync(pipfilePath) || fs.existsSync(setupPyPath)) {
+  if (fs.existsSync(pyprojectPath) || fs.existsSync(reqsPath) || fs.existsSync(reqsDevPath) || fs.existsSync(pipfilePath) || fs.existsSync(setupPyPath)) {
     result.techStack.push('Python');
     let runner = 'python';
 
@@ -92,6 +93,8 @@ function detectStack(rootDir = process.cwd()) {
       }
     } else if (fs.existsSync(reqsPath)) {
       result.commands.install = 'pip install -r requirements.txt';
+    } else if (fs.existsSync(reqsDevPath)) {
+      result.commands.install = 'pip install -r requirements-dev.txt';
     }
 
     if (!result.commands.test) result.commands.test = `${runner} pytest`.trim();
@@ -134,7 +137,13 @@ function detectStack(rootDir = process.cwd()) {
   }
 
   // 5. Check Docker
-  if (fs.existsSync(path.join(rootDir, 'Dockerfile')) || fs.existsSync(path.join(rootDir, 'docker-compose.yml'))) {
+  if (
+    fs.existsSync(path.join(rootDir, 'Dockerfile')) ||
+    fs.existsSync(path.join(rootDir, 'docker-compose.yml')) ||
+    fs.existsSync(path.join(rootDir, 'docker-compose.yaml')) ||
+    fs.existsSync(path.join(rootDir, 'compose.yml')) ||
+    fs.existsSync(path.join(rootDir, 'compose.yaml'))
+  ) {
     result.techStack.push('Docker');
   }
 
