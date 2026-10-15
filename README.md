@@ -242,15 +242,37 @@ node bin/index.js import agents
 
 ---
 
+---
+
+## 🤖 Supported AI Ecosystem Matrix
+
+| AI Assistant / Agent | Config Output Target | Format & Capabilities |
+|:---|:---|:---|
+| **Claude Code** | `CLAUDE.md` | Single file, `@AGENTS.md` reference transclusion mode, active task banner |
+| **Google Antigravity** | `ANTIGRAVITY.md` | Directives, modular skills catalog, workflow rules |
+| **Antigravity & Hermes Skills**| `skills/*/SKILL.md` | Modular skill packages with YAML frontmatter |
+| **Modern Cursor 2.0** | `.cursor/rules/*.mdc` | Scoped glob matching (`globs`), descriptions, `alwaysApply` flags |
+| **Legacy Cursor** | `.cursorrules` | Direct project guidelines and agent constraints |
+| **Windsurf (Cascade)** | `.windsurfrules` | Cascade workspace directives & style conventions |
+| **GitHub Copilot** | `.github/copilot-instructions.md`| Repository-level copilot instructions |
+| **Hermes / Aider / Open Standard** | `AGENTS.md` | Multi-agent universal context standard |
+| **Model Context Protocol (MCP)** | `.mcp.json` | Protocol server declarations, arguments, and environment keys |
+
+---
+
 ## 🧪 Testing & Verification
 
-Run the end-to-end and deep sanitization audit test suites:
-```bash
-# Run unit & defensive sanitization tests
-node test_deep.js
+The project includes 12 comprehensive test suites verifying functionality, edge cases, defensive sanitization, and end-to-end sandbox operations:
 
-# Run full 0-to-100 End-to-End stress test
-node test_e2e.js
+```bash
+# Run all 12 test suites (Phase 1 through 8 + E2E + Deep Audit)
+npm test
+
+# Run individual test suites
+node test_deep.js         # Deep sanitization & crash-immunity tests
+node test_e2e.js          # Full E2E import/export stress tests
+node test_phase8.js       # 3-Way merge & unified diff tests
+node test_audit_deep.js   # Edge-case & modular scanner tests
 ```
 
 ---
@@ -258,3 +280,6 @@ node test_e2e.js
 ## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+Developed with ❤️ by **M.H. Nadali** (Single Source of Truth for Multi-Agent AI Coding).
+
