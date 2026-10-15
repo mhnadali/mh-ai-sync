@@ -32,6 +32,12 @@ const {
   mergeAllDriftedFiles
 } = require('../src/merger');
 const {
+  discoverWorkspaces,
+  syncAllWorkspaces,
+  checkWorkspacesStatus,
+  formatWorkspacesReport
+} = require('../src/monorepo');
+const {
   sanitize,
   generateClaudeMd,
   generateAgentsMd,
@@ -156,7 +162,7 @@ function importFrom(sourceType) {
   log(`Imported and merged rules from ${sourceType.toUpperCase()} into ${CONFIG_FILE}`);
 }
 
-function build(redact = false) {
+function build(redact = false, syncWorkspaces = false) {
   const config = loadConfig();
   const taskState = loadTaskState(CWD);
   const taskBanner = generateTaskBanner(taskState);
@@ -218,16 +224,61 @@ function build(redact = false) {
     log(`✔ Active Task Bridge active: "${taskState.activeTask}" synchronized across agents!`, "\x1b[36m");
   }
 
+  if (syncWorkspaces) {
+    const wsRes = syncAllWorkspaces(config, CWD, taskBanner);
+    if (wsRes.workspacesCount > 0) {
+      log(`✔ Synchronized across ${wsRes.workspacesCount} monorepo workspaces!`, "\x1b[36m");
+    }
+  }
+
   log('\n✨ [M.H. AI Sync] All AI Agents and Coding assistants are fully aligned!', "\x1b[36m");
 }
 
-function status(checkOnly = false) {
+function status(checkOnly = false, checkWorkspaces = false) {
   const config = loadConfig();
   const report = checkStatus(config, CWD);
   console.log(formatStatusReport(report));
 
-  if (checkOnly && !report.isClean) {
+  let isClean = report.isClean;
+
+  if (checkWorkspaces) {
+    const wsStatus = checkWorkspacesStatus(config, CWD);
+    if (wsStatus.totalWorkspaces > 0) {
+      console.log(`\n\x1b[1m\x1b[36m=== Monorepo Workspaces Status (${wsStatus.totalWorkspaces} workspaces) ===\x1b[0m`);
+      for (const item of wsStatus.reports) {
+        const badge = item.status.isClean ? '\x1b[32m✔ IN_SYNC\x1b[0m' : '\x1b[33m⚡ DRIFTED\x1b[0m';
+        console.log(`  ${badge} ${item.path} (${item.workspace})`);
+      }
+      if (!wsStatus.isAllClean) isClean = false;
+    }
+  }
+
+  if (checkOnly && !isClean) {
     process.exit(1);
+  }
+}
+
+function manageWorkspaces(action = 'list') {
+  const config = loadConfig();
+  const workspaces = discoverWorkspaces(CWD);
+
+  if (action === 'sync' || action === 'build') {
+    const taskState = loadTaskState(CWD);
+    const banner = generateTaskBanner(taskState);
+    const res = syncAllWorkspaces(config, CWD, banner);
+    log(`✔ Synchronized AI contexts across ${res.workspacesCount} monorepo workspaces!`);
+  } else if (action === 'status' || action === 'check') {
+    const wsStatus = checkWorkspacesStatus(config, CWD);
+    console.log(formatWorkspacesReport(workspaces));
+    if (wsStatus.isAllClean) {
+      log('✨ All monorepo workspaces are fully synchronized!');
+    } else {
+      log('⚠️ Synchronization drift detected in one or more workspaces. Run `mhai monorepo sync` to re-align.', "\x1b[33m");
+      if (args.includes('--check')) process.exit(1);
+    }
+  } else {
+    console.log(formatWorkspacesReport(workspaces));
+    log('💡 Run `mhai monorepo sync` to cascade canonical configurations down to all subpackages.');
   }
 }
 
@@ -428,7 +479,7 @@ function smartMerge(filterFile = null) {
 
 function printHelp() {
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v1.8.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v1.9.0\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m
@@ -464,7 +515,10 @@ A Unified Bridge for Multi-Agent AI Coding Systems
   \x1b[32manalyze\x1b[0m (tokens) Calculate token budget consumption & prompt health score
   \x1b[32mhook install\x1b[0m   Install native Git pre-commit hook to guard local commits
   \x1b[32mhook uninstall\x1b[0m Remove native Git pre-commit hook
-  \x1b[32mci\x1b[0m (github-action) Install GitHub Actions workflow for PR verification
+  \x1b[32mworkspaces\x1b[0m (monorepo) Manage enterprise monorepos & subpackage workspaces:
+                - workspaces               : Discover and list all workspace subpackages
+                - workspaces sync          : Cascade root rules down to all subpackages
+                - workspaces status        : Verify synchronization across all workspaces
   \x1b[32mimport <src>\x1b[0m   Import from 'claude', 'cursor', or 'agents' into mhai.config.json
   \x1b[32mhelp\x1b[0m           Show this help menu
 
@@ -473,6 +527,7 @@ A Unified Bridge for Multi-Agent AI Coding Systems
   --strict      When running 'audit', exit with code 1 if any credentials are found
   --redact      When running 'build', automatically redact detected secrets
   --merge       When running 'build' or 'sync', automatically merge disk edits first
+  --workspaces  (or --all) Also compile or check across all monorepo workspaces
 `);
 }
 
@@ -488,7 +543,7 @@ switch (command) {
     if (args.includes('--merge')) {
       smartMerge();
     } else {
-      build(args.includes('--redact'));
+      build(args.includes('--redact'), args.includes('--workspaces') || args.includes('--all'));
     }
     break;
   case 'diff':
@@ -501,7 +556,7 @@ switch (command) {
     watch();
     break;
   case 'status':
-    status(args.includes('--check'));
+    status(args.includes('--check'), args.includes('--workspaces') || args.includes('--all'));
     break;
   case 'audit':
   case 'lint':
@@ -518,6 +573,11 @@ switch (command) {
   case 'task':
   case 'memory':
     manageTask(args[1], args[2], args[3]);
+    break;
+  case 'workspaces':
+  case 'monorepo':
+  case 'ws':
+    manageWorkspaces(args[1] || 'list');
     break;
   case 'hook':
   case 'hooks':
