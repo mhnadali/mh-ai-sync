@@ -15,6 +15,7 @@ Description: Multi-agent context-aware codebase configured via M.H. AI Sync.
 - DIRECTIVE: Preserve existing comments and docstrings.
 - DIRECTIVE: Always verify syntax and run test suites before finalizing changes.
 - DIRECTIVE: Prefer minimal and surgical edits over rewriting entire files.
+- DIRECTIVE: Never commit or hardcode secrets, tokens, or credentials.
 
 ## Skills Available
 - **git-workflow**: Handles repository staging, commits, and branch management safely.

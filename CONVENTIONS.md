@@ -19,8 +19,10 @@ Multi-agent context-aware codebase configured via M.H. AI Sync.
 ## Git Conventions
 - Use conventional commits (feat:, fix:, chore:, refactor:).
 - Do not push broken builds or failing tests.
+- Never push directly to main; pull requests only.
 
 ## Agent Directives & Constraints
 - Preserve existing comments and docstrings.
 - Always verify syntax and run test suites before finalizing changes.
 - Prefer minimal and surgical edits over rewriting entire files.
+- Never commit or hardcode secrets, tokens, or credentials.

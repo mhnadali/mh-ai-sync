@@ -5,6 +5,7 @@ You are an expert AI software engineer assisting in this repository.
 - Preserve existing comments and docstrings.
 - Always verify syntax and run test suites before finalizing changes.
 - Prefer minimal and surgical edits over rewriting entire files.
+- Never commit or hardcode secrets, tokens, or credentials.
 
 ## Code Style
 - Follow Clean Code and DRY principles.

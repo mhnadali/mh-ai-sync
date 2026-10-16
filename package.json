@@ -1,6 +1,6 @@
 {
   "name": "mh-ai-sync",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Unified bidirectional sync engine and packager for AI Coding Agents: Claude Code, Antigravity, Cursor, Windsurf, Copilot, Hermes, Cline, Roo, Aider & MCP.",
   "main": "bin/index.js",
   "bin": {
@@ -50,7 +50,8 @@
     "conflicts": "node bin/index.js conflicts",
     "snapshot": "node bin/index.js snapshot",
     "rollback": "node bin/index.js rollback",
-    "test": "node test.js && node test_deep.js && node test_e2e.js && node test_phase1.js && node test_phase2.js && node test_phase3.js && node test_phase4.js && node test_phase5.js && node test_phase6.js && node test_phase7.js && node test_phase8.js && node test_phase9.js && node test_phase10.js && node test_phase11.js && node test_phase12.js && node test_deep_debug_v2.js && node test_audit_deep.js && node test_phase13.js && node test_phase14.js"
+    "simulate": "node bin/index.js simulate",
+    "test": "node test.js && node test_deep.js && node test_e2e.js && node test_phase1.js && node test_phase2.js && node test_phase3.js && node test_phase4.js && node test_phase5.js && node test_phase6.js && node test_phase7.js && node test_phase8.js && node test_phase9.js && node test_phase10.js && node test_phase11.js && node test_phase12.js && node test_deep_debug_v2.js && node test_audit_deep.js && node test_phase13.js && node test_phase14.js && node test_phase15.js"
   },
   "keywords": [
     "ai-agent",

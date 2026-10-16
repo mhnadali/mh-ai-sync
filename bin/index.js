@@ -69,6 +69,12 @@ const {
   formatSnapshotsList
 } = require('../src/snapshots');
 const {
+  runSimulationSuite,
+  evaluateCustomPrompt,
+  formatSimulationReport,
+  formatPromptEvaluationReport
+} = require('../src/simulator');
+const {
   sanitize,
   generateClaudeMd,
   generateAgentsMd,
@@ -587,6 +593,24 @@ function runRollback(tagOrId) {
   }
 }
 
+function runSimulation(promptArg, options = {}) {
+  const config = loadConfig();
+  if (promptArg && !promptArg.startsWith('-')) {
+    log(`Simulating custom agent prompt against project rules...`, '\x1b[36m');
+    const result = evaluateCustomPrompt(config, promptArg);
+    console.log(formatPromptEvaluationReport(result));
+  } else {
+    log('Running AI Agent Behavior & Compliance Simulation Suite...', '\x1b[36m');
+    const result = runSimulationSuite(config);
+    console.log(formatSimulationReport(result));
+
+    if (options.strict && !result.isCompliant) {
+      log('✖ Simulation failed strict compliance threshold!', '\x1b[31m');
+      process.exit(1);
+    }
+  }
+}
+
 function manageMcp(subcommand, arg1, ...restArgs) {
   const config = loadConfig();
 
@@ -815,6 +839,10 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                 - snapshot prune [count]         : Keep latest N snapshots and purge older ones
                 - snapshot delete <tag>          : Remove a specific snapshot
   \x1b[32mrollback\x1b[0m [tag]    Revert canonical context & auto-align all AI targets to past snapshot
+  \x1b[32msimulate\x1b[0m (sandbox) AI Agent Simulator & Rule Compliance Sandbox (Phase 15):
+                - simulate                     : Run benchmark simulation suite across all risk scenarios
+                - simulate "<prompt>"          : Test custom prompt or action against active project rules
+                - simulate --strict            : Exit with code 1 if compliance score < 75% or critical risks
   \x1b[32mhook install\x1b[0m   Install native Git pre-commit hook to guard local commits
   \x1b[32mhook uninstall\x1b[0m Remove native Git pre-commit hook
   \x1b[32mworkspaces\x1b[0m (monorepo) Manage enterprise monorepos & subpackage workspaces:
@@ -892,6 +920,11 @@ switch (command) {
   case 'rollback':
   case 'revert':
     runRollback(args[1]);
+    break;
+  case 'simulate':
+  case 'simulation':
+  case 'sandbox':
+    runSimulation(args[1], { strict: args.includes('--strict') });
     break;
   case 'analyze':
   case 'tokens':

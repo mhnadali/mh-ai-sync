@@ -26,3 +26,4 @@ Modular layered architecture with AI agent support.
 - Preserve existing comments and docstrings.
 - Always verify syntax and run test suites before finalizing changes.
 - Prefer minimal and surgical edits over rewriting entire files.
+- Never commit or hardcode secrets, tokens, or credentials.

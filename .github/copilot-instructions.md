@@ -8,3 +8,4 @@ Multi-agent context-aware codebase configured via M.H. AI Sync.
 - Preserve existing comments and docstrings.
 - Always verify syntax and run test suites before finalizing changes.
 - Prefer minimal and surgical edits over rewriting entire files.
+- Never commit or hardcode secrets, tokens, or credentials.

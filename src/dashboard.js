@@ -19,6 +19,7 @@ const { discoverWorkspaces, checkWorkspacesStatus } = require('./monorepo');
 const { listRemotes } = require('./remote');
 const { detectConflicts } = require('./optimizer');
 const { createSnapshot, listSnapshots, rollbackSnapshot } = require('./snapshots');
+const { runSimulationSuite, evaluateCustomPrompt } = require('./simulator');
 
 /**
  * Aggregates all project state for both TUI and Web dashboards.
@@ -43,6 +44,7 @@ function getDashboardState(rootDir = process.cwd()) {
   const remotesList = listRemotes(rootDir);
   const conflicts = detectConflicts(config);
   const snapshotsList = listSnapshots(rootDir);
+  const simulation = runSimulationSuite(config);
 
   return {
     timestamp: new Date().toISOString(),
@@ -73,6 +75,14 @@ function getDashboardState(rootDir = process.cwd()) {
       hasConflicts: conflicts.hasConflicts,
       totalConflicts: conflicts.totalConflicts,
       list: conflicts.conflicts
+    },
+    simulation: {
+      complianceScore: simulation.complianceScore,
+      isCompliant: simulation.isCompliant,
+      guardedCount: simulation.guardedCount,
+      totalScenarios: simulation.totalScenarios,
+      criticalUnguarded: simulation.criticalUnguarded,
+      recommendations: simulation.recommendations
     },
     snapshots: {
       count: snapshotsList.length,
@@ -583,6 +593,30 @@ function createDashboardServer(rootDir = process.cwd(), port = 3840) {
           execSync(`node "${path.join(__dirname, '..', 'bin', 'index.js')}" build`, { cwd: rootDir, stdio: 'ignore' });
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: true, result }));
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/simulate' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const payload = JSON.parse(body || '{}');
+          const cfg = sanitize(fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, 'utf8')) : {});
+          if (payload.prompt) {
+            const evalResult = evaluateCustomPrompt(cfg, payload.prompt);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, result: evalResult }));
+          } else {
+            const suiteResult = runSimulationSuite(cfg);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, result: suiteResult }));
+          }
         } catch (err) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, error: err.message }));

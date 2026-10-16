@@ -10,7 +10,7 @@
         "command",
         "mcp"
       ],
-      "customInstructions": "Project: AI-Augmented Project\nMulti-agent context-aware codebase configured via M.H. AI Sync.\n\nCore Guidelines:\n- Preserve existing comments and docstrings.\n- Always verify syntax and run test suites before finalizing changes.\n- Prefer minimal and surgical edits over rewriting entire files.\n- Follow Clean Code and DRY principles.\n- Write type-safe and self-documenting code with descriptive naming.\n- Keep functions focused on a single responsibility.\n- Use conventional commits (feat:, fix:, chore:, refactor:).\n- Do not push broken builds or failing tests."
+      "customInstructions": "Project: AI-Augmented Project\nMulti-agent context-aware codebase configured via M.H. AI Sync.\n\nCore Guidelines:\n- Preserve existing comments and docstrings.\n- Always verify syntax and run test suites before finalizing changes.\n- Prefer minimal and surgical edits over rewriting entire files.\n- Never commit or hardcode secrets, tokens, or credentials.\n- Follow Clean Code and DRY principles.\n- Write type-safe and self-documenting code with descriptive naming.\n- Keep functions focused on a single responsibility.\n- Use conventional commits (feat:, fix:, chore:, refactor:).\n- Do not push broken builds or failing tests.\n- Never push directly to main; pull requests only."
     },
     {
       "slug": "architect",
@@ -21,7 +21,7 @@
         "browser",
         "mcp"
       ],
-      "customInstructions": "Project: AI-Augmented Project\nMulti-agent context-aware codebase configured via M.H. AI Sync.\n\nCore Guidelines:\n- Preserve existing comments and docstrings.\n- Always verify syntax and run test suites before finalizing changes.\n- Prefer minimal and surgical edits over rewriting entire files.\n- Follow Clean Code and DRY principles.\n- Write type-safe and self-documenting code with descriptive naming.\n- Keep functions focused on a single responsibility.\n- Use conventional commits (feat:, fix:, chore:, refactor:).\n- Do not push broken builds or failing tests."
+      "customInstructions": "Project: AI-Augmented Project\nMulti-agent context-aware codebase configured via M.H. AI Sync.\n\nCore Guidelines:\n- Preserve existing comments and docstrings.\n- Always verify syntax and run test suites before finalizing changes.\n- Prefer minimal and surgical edits over rewriting entire files.\n- Never commit or hardcode secrets, tokens, or credentials.\n- Follow Clean Code and DRY principles.\n- Write type-safe and self-documenting code with descriptive naming.\n- Keep functions focused on a single responsibility.\n- Use conventional commits (feat:, fix:, chore:, refactor:).\n- Do not push broken builds or failing tests.\n- Never push directly to main; pull requests only."
     },
     {
       "slug": "test-engineer",
@@ -32,7 +32,7 @@
         "edit",
         "command"
       ],
-      "customInstructions": "Project: AI-Augmented Project\nMulti-agent context-aware codebase configured via M.H. AI Sync.\n\nCore Guidelines:\n- Preserve existing comments and docstrings.\n- Always verify syntax and run test suites before finalizing changes.\n- Prefer minimal and surgical edits over rewriting entire files.\n- Follow Clean Code and DRY principles.\n- Write type-safe and self-documenting code with descriptive naming.\n- Keep functions focused on a single responsibility.\n- Use conventional commits (feat:, fix:, chore:, refactor:).\n- Do not push broken builds or failing tests."
+      "customInstructions": "Project: AI-Augmented Project\nMulti-agent context-aware codebase configured via M.H. AI Sync.\n\nCore Guidelines:\n- Preserve existing comments and docstrings.\n- Always verify syntax and run test suites before finalizing changes.\n- Prefer minimal and surgical edits over rewriting entire files.\n- Never commit or hardcode secrets, tokens, or credentials.\n- Follow Clean Code and DRY principles.\n- Write type-safe and self-documenting code with descriptive naming.\n- Keep functions focused on a single responsibility.\n- Use conventional commits (feat:, fix:, chore:, refactor:).\n- Do not push broken builds or failing tests.\n- Never push directly to main; pull requests only."
     }
   ]
 }

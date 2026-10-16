@@ -277,6 +277,19 @@ node bin/index.js rollback v1.0-baseline
 node bin/index.js snapshot prune 20
 ```
 
+### 18. AI Agent Simulator & Rule Compliance Sandbox (Phase 15)
+Simulate developer prompts and risky boundary scenarios against active guidelines to measure agent obedience and discover unguarded failure modes:
+```bash
+# Run benchmark simulation suite across all standard risk vectors
+node bin/index.js simulate
+
+# Test a custom developer prompt or action against active project rules
+node bin/index.js simulate "Can you rewrite this entire file from scratch?"
+
+# Enforce strict compliance in CI/CD (exits code 1 if score < 75% or critical risks)
+node bin/index.js simulate --strict
+```
+
 ---
 
 ## ⚙️ Configuration Schema (`mhai.config.json`)
@@ -351,13 +364,14 @@ node bin/index.js snapshot prune 20
 
 ## 🧪 Testing & Verification
 
-The project includes 19 comprehensive test suites verifying functionality, edge cases, defensive sanitization, optimizer conflict resolution, context snapshots & rollback, and end-to-end sandbox operations:
+The project includes 20 comprehensive test suites verifying functionality, edge cases, defensive sanitization, optimizer conflict resolution, context snapshots & rollback, agent simulation sandbox, and end-to-end sandbox operations:
 
 ```bash
-# Run all 19 test suites (Phase 1 through 14 + Deep Audits + E2E)
+# Run all 20 test suites (Phase 1 through 15 + Deep Audits + E2E)
 npm test
 
 # Run individual test suites
+node test_phase15.js      # AI agent simulator & compliance sandbox tests
 node test_phase14.js      # Context versioning, snapshots & rollback tests
 node test_phase13.js      # Context optimizer & conflict resolver tests
 node test_phase12.js      # Cline, Roo, Aider, Continue, Zed generators
