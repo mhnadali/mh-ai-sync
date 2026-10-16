@@ -16,7 +16,11 @@ function startWatcher(rootDir = process.cwd(), onSync = () => {}, debounceMs = 3
     'ANTIGRAVITY.md',
     '.cursorrules',
     '.windsurfrules',
-    '.mcp.json'
+    '.mcp.json',
+    '.clinerules',
+    '.roomodes',
+    'CONVENTIONS.md',
+    '.aider.conf.yml'
   ];
 
   let debounceTimer = null;

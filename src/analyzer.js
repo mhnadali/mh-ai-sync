@@ -13,7 +13,13 @@ const {
   generateCursorMdcRules,
   generateSkillFiles,
   generateWindsurfRules,
-  generateCopilotInstructions
+  generateCopilotInstructions,
+  generateClineRules,
+  generateRooModes,
+  generateAiderConventions,
+  generateAiderConfig,
+  generateContinueRules,
+  generateZedInstructions
 } = require('./generators');
 
 function estimateTokens(text = "") {
@@ -76,7 +82,13 @@ function analyzePromptBudget(rawConfig) {
     { name: 'ANTIGRAVITY.md', content: generateAntigravityConfig(config) },
     { name: '.cursorrules', content: generateCursorRules(config) },
     { name: '.windsurfrules', content: generateWindsurfRules(config) },
-    { name: 'copilot-instructions.md', content: generateCopilotInstructions(config) }
+    { name: 'copilot-instructions.md', content: generateCopilotInstructions(config) },
+    { name: '.clinerules', content: generateClineRules(config) },
+    { name: '.roomodes', content: generateRooModes(config) },
+    { name: 'CONVENTIONS.md', content: generateAiderConventions(config) },
+    { name: '.aider.conf.yml', content: generateAiderConfig(config) },
+    { name: '.continue/rules/project-rules.md', content: generateContinueRules(config) },
+    { name: '.zed/instructions.md', content: generateZedInstructions(config) }
   ];
 
   const mdcRules = generateCursorMdcRules(config);

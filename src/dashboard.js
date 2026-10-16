@@ -161,9 +161,16 @@ function renderTuiDashboard(state) {
   // Section 2: Health & Security Meters
   const syncBadge = state.status.isClean ? '\x1b[32m✔ IN_SYNC\x1b[0m' : '\x1b[31m⚡ DRIFTED\x1b[0m';
   const secBadge = state.audit.isSecure ? '\x1b[32m✔ SECURE (0 Leaks)\x1b[0m' : `\x1b[31m✖ AT RISK (${state.audit.totalIssues} Leaks)\x1b[0m`;
-  lines.push(`\x1b[1mContext Sync:\x1b[0m  ${syncBadge}     \x1b[1mSecurity Guard:\x1b[0m  ${secBadge}`);
-  lines.push(`\x1b[1mHealth Score:\x1b[0m  ${renderBar(state.analysis.healthScore)}  (\x1b[36m${state.analysis.rating}\x1b[0m)`);
-  lines.push(`\x1b[1mToken Usage:\x1b[0m   ~${state.analysis.totalTokens} tokens (Claude: ~${state.analysis.agentEstimates.claudeCode}, Cursor: ~${state.analysis.agentEstimates.cursor})`);
+  const simScore = state.simulation ? state.simulation.complianceScore : 100;
+  const simBadge = simScore >= 80 ? `\x1b[32m✔ ${simScore}% Compliant\x1b[0m` : `\x1b[31m✖ ${simScore}% At Risk\x1b[0m`;
+  const conflictBadge = (state.conflicts && state.conflicts.totalConflicts > 0)
+    ? `\x1b[31m✖ ${state.conflicts.totalConflicts} Contradictions\x1b[0m`
+    : `\x1b[32m✔ 0 Contradictions\x1b[0m`;
+
+  lines.push(`\x1b[1mContext Sync:\x1b[0m    ${syncBadge}       \x1b[1mSecurity Guard:\x1b[0m    ${secBadge}`);
+  lines.push(`\x1b[1mRule Sandbox:\x1b[0m    ${simBadge}    \x1b[1mSemantic Rules:\x1b[0m    ${conflictBadge}`);
+  lines.push(`\x1b[1mHealth Score:\x1b[0m    ${renderBar(state.analysis.healthScore)}  (\x1b[36m${state.analysis.rating}\x1b[0m)`);
+  lines.push(`\x1b[1mToken Usage:\x1b[0m     ~${state.analysis.totalTokens} tokens (Claude: ~${state.analysis.agentEstimates.claudeCode}, Cursor: ~${state.analysis.agentEstimates.cursor})`);
   lines.push(`\x1b[90m${hr}\x1b[0m`);
 
   // Section 3: Target Agents & Formats Grid
@@ -189,6 +196,11 @@ function renderTuiDashboard(state) {
   if (state.remotes && state.remotes.count > 0) {
     const remoteNames = state.remotes.list.map(r => r.name).join(', ');
     lines.push(`\x1b[1mTeam Remotes:\x1b[0m  \x1b[36m${state.remotes.count} linked\x1b[0m (${remoteNames})`);
+  }
+
+  if (state.snapshots && state.snapshots.count > 0) {
+    const latestTag = state.snapshots.latest ? state.snapshots.latest.tag : 'checkpoint';
+    lines.push(`\x1b[1mTime Machine:\x1b[0m  \x1b[36m${state.snapshots.count} snapshots\x1b[0m (Latest: \x1b[32m${latestTag}\x1b[0m)`);
   }
   lines.push(`\x1b[90m${hr}\x1b[0m`);
 

@@ -51,7 +51,7 @@
     "snapshot": "node bin/index.js snapshot",
     "rollback": "node bin/index.js rollback",
     "simulate": "node bin/index.js simulate",
-    "test": "node test.js && node test_deep.js && node test_e2e.js && node test_phase1.js && node test_phase2.js && node test_phase3.js && node test_phase4.js && node test_phase5.js && node test_phase6.js && node test_phase7.js && node test_phase8.js && node test_phase9.js && node test_phase10.js && node test_phase11.js && node test_phase12.js && node test_deep_debug_v2.js && node test_audit_deep.js && node test_phase13.js && node test_phase14.js && node test_phase15.js"
+    "test": "node test.js && node test_deep.js && node test_e2e.js && node test_phase1.js && node test_phase2.js && node test_phase3.js && node test_phase4.js && node test_phase5.js && node test_phase6.js && node test_phase7.js && node test_phase8.js && node test_phase9.js && node test_phase10.js && node test_phase11.js && node test_phase12.js && node test_deep_debug_v2.js && node test_audit_deep.js && node test_phase13.js && node test_phase14.js && node test_phase15.js && node test_deep_audit_v2_5.js"
   },
   "keywords": [
     "ai-agent",

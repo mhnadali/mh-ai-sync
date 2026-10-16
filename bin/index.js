@@ -780,8 +780,9 @@ async function runPull(remoteName, ...extraArgs) {
 }
 
 function printHelp() {
+  const pkg = require('../package.json');
   console.log(`
-\x1b[1m\x1b[36mM.H. AI Sync CLI v2.1.0\x1b[0m
+\x1b[1m\x1b[36mM.H. AI Sync CLI v${pkg.version}\x1b[0m
 A Unified Bridge for Multi-Agent AI Coding Systems
 
 \x1b[1mUSAGE:\x1b[0m

@@ -17,7 +17,13 @@ const {
   generateSkillFiles,
   generateWindsurfRules,
   generateCopilotInstructions,
-  generateMcpConfig
+  generateMcpConfig,
+  generateClineRules,
+  generateRooModes,
+  generateAiderConventions,
+  generateAiderConfig,
+  generateContinueRules,
+  generateZedInstructions
 } = require('./generators');
 const { loadTaskState, generateTaskBanner } = require('./task');
 const { normalizeContent, checkStatus } = require('./status');
@@ -120,7 +126,13 @@ function getExpectedFileTargets(config, rootDir = process.cwd()) {
     { name: '.cursorrules', parser: parseCursorRules, expected: normalizeContent(generateCursorRules(config, taskBanner)) },
     { name: '.windsurfrules', parser: parseAgentsMd, expected: normalizeContent(generateWindsurfRules(config)) },
     { name: path.join('.github', 'copilot-instructions.md'), parser: parseAgentsMd, expected: normalizeContent(generateCopilotInstructions(config)) },
-    { name: '.mcp.json', expected: normalizeContent(generateMcpConfig(config)) }
+    { name: '.mcp.json', expected: normalizeContent(generateMcpConfig(config)) },
+    { name: '.clinerules', parser: parseAgentsMd, expected: normalizeContent(generateClineRules(config, taskBanner)) },
+    { name: '.roomodes', expected: normalizeContent(generateRooModes(config, taskBanner)) },
+    { name: 'CONVENTIONS.md', parser: parseAgentsMd, expected: normalizeContent(generateAiderConventions(config, taskBanner)) },
+    { name: '.aider.conf.yml', expected: normalizeContent(generateAiderConfig(config)) },
+    { name: path.join('.continue', 'rules', 'project-rules.md'), parser: parseAgentsMd, expected: normalizeContent(generateContinueRules(config, taskBanner)) },
+    { name: path.join('.zed', 'instructions.md'), parser: parseAgentsMd, expected: normalizeContent(generateZedInstructions(config, taskBanner)) }
   ];
 
   // Add Modular Cursor MDC Rules
@@ -210,6 +222,10 @@ function mergeFileIntoConfig(targetFileName, actualContent, rawConfig) {
         }
       }
     } catch {}
+    return { config, changes };
+  }
+
+  if (lowerName.endsWith('.roomodes') || lowerName.endsWith('.aider.conf.yml')) {
     return { config, changes };
   }
 
