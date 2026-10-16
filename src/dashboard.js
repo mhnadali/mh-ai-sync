@@ -18,6 +18,7 @@ const { listConfiguredServers } = require('./mcpHub');
 const { discoverWorkspaces, checkWorkspacesStatus } = require('./monorepo');
 const { listRemotes } = require('./remote');
 const { detectConflicts } = require('./optimizer');
+const { createSnapshot, listSnapshots, rollbackSnapshot } = require('./snapshots');
 
 /**
  * Aggregates all project state for both TUI and Web dashboards.
@@ -41,6 +42,7 @@ function getDashboardState(rootDir = process.cwd()) {
   const workspacesStatus = workspaces.length > 0 ? checkWorkspacesStatus(config, rootDir) : null;
   const remotesList = listRemotes(rootDir);
   const conflicts = detectConflicts(config);
+  const snapshotsList = listSnapshots(rootDir);
 
   return {
     timestamp: new Date().toISOString(),
@@ -71,6 +73,18 @@ function getDashboardState(rootDir = process.cwd()) {
       hasConflicts: conflicts.hasConflicts,
       totalConflicts: conflicts.totalConflicts,
       list: conflicts.conflicts
+    },
+    snapshots: {
+      count: snapshotsList.length,
+      latest: snapshotsList[0] || null,
+      list: snapshotsList.slice(0, 10).map(s => ({
+        id: s.id,
+        tag: s.tag,
+        timestamp: s.timestamp,
+        message: s.message,
+        rules: s.metrics?.totalRules || 0,
+        tokens: s.metrics?.estimatedTokens || 0
+      }))
     },
     task: {
       activeTask: task.activeTask,
@@ -528,6 +542,52 @@ function createDashboardServer(rootDir = process.cwd(), port = 3840) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: err.message }));
       }
+      return;
+    }
+
+    if (url.pathname === '/api/snapshots' && req.method === 'GET') {
+      const snaps = listSnapshots(rootDir);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, count: snaps.length, snapshots: snaps }));
+      return;
+    }
+
+    if (url.pathname === '/api/snapshots' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const payload = JSON.parse(body || '{}');
+          const created = createSnapshot(rootDir, {
+            tag: payload.tag,
+            message: payload.message
+          });
+          res.writeHead(201, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, snapshot: created }));
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/rollback' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const payload = JSON.parse(body || '{}');
+          const result = rollbackSnapshot(rootDir, payload.tag || payload.id);
+          const { execSync } = require('child_process');
+          execSync(`node "${path.join(__dirname, '..', 'bin', 'index.js')}" build`, { cwd: rootDir, stdio: 'ignore' });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, result }));
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
       return;
     }
 

@@ -1,10 +1,8 @@
 node_modules/
 test_sandbox/
-test_phase1_sandbox/
-test_phase2_sandbox/
-test_phase3_sandbox/
-test_phase4_sandbox/
-test_phase5_sandbox/
+test_phase*_sandbox/
+.test_sandbox*/
+.mhai/
 *.log
 .DS_Store
 Thumbs.db

@@ -59,6 +59,16 @@ const {
   formatOptimizationReport
 } = require('../src/optimizer');
 const {
+  createSnapshot,
+  listSnapshots,
+  getSnapshot,
+  diffSnapshot,
+  rollbackSnapshot,
+  deleteSnapshot,
+  pruneSnapshots,
+  formatSnapshotsList
+} = require('../src/snapshots');
+const {
   sanitize,
   generateClaudeMd,
   generateAgentsMd,
@@ -490,6 +500,93 @@ function checkRulesConflicts(strict = false) {
   }
 }
 
+function manageSnapshots(subcommand, tagOrId, ...extraArgs) {
+  try {
+    if (!subcommand || subcommand === 'list') {
+      const snaps = listSnapshots(CWD);
+      console.log(formatSnapshotsList(snaps));
+      return;
+    }
+
+    if (subcommand === 'save' || subcommand === 'create') {
+      const msgIdx = extraArgs.indexOf('-m');
+      const msgIdxLong = extraArgs.indexOf('--message');
+      let message = 'Manual snapshot';
+      if (msgIdx !== -1 && extraArgs[msgIdx + 1]) {
+        message = extraArgs[msgIdx + 1];
+      } else if (msgIdxLong !== -1 && extraArgs[msgIdxLong + 1]) {
+        message = extraArgs[msgIdxLong + 1];
+      }
+
+      log(`Creating AI context snapshot [${tagOrId || 'snapshot'}]...`, '\x1b[36m');
+      const snap = createSnapshot(CWD, { tag: tagOrId, message });
+      log(`✔ Snapshot saved successfully!`);
+      console.log(`  ID:       \x1b[32m${snap.id}\x1b[0m`);
+      console.log(`  Tag:      \x1b[36m${snap.tag}\x1b[0m`);
+      console.log(`  Checksum: ${snap.checksum}`);
+      console.log(`  Rules:    ${snap.metrics.totalRules} | Tokens: ~${snap.metrics.estimatedTokens}`);
+      return;
+    }
+
+    if (subcommand === 'diff') {
+      const target = tagOrId || 'latest';
+      log(`Diffing current context against snapshot "${target}"...`, '\x1b[36m');
+      const diffResult = diffSnapshot(CWD, target);
+      if (!diffResult.hasChanges) {
+        log(`✔ Current configuration is identical to snapshot "${diffResult.snapshot.tag}".`);
+      } else {
+        console.log('\n' + diffResult.unifiedDiffText + '\n');
+      }
+      return;
+    }
+
+    if (subcommand === 'prune') {
+      const keepCount = parseInt(tagOrId, 10) || 20;
+      log(`Pruning snapshots older than the latest ${keepCount}...`, '\x1b[36m');
+      const result = pruneSnapshots(CWD, keepCount);
+      log(`✔ Pruned ${result.prunedCount} old snapshot(s). ${result.remainingCount} snapshot(s) remaining.`);
+      return;
+    }
+
+    if (subcommand === 'delete' || subcommand === 'rm') {
+      if (!tagOrId) {
+        log('Usage: mhai snapshot delete <tag|@index>', '\x1b[31m');
+        process.exit(1);
+      }
+      const deleted = deleteSnapshot(CWD, tagOrId);
+      if (deleted) {
+        log(`✔ Deleted snapshot "${tagOrId}".`);
+      } else {
+        log(`✖ Snapshot not found: "${tagOrId}".`, '\x1b[31m');
+        process.exit(1);
+      }
+      return;
+    }
+
+    log(`Unknown snapshot subcommand: "${subcommand}". Available: list, save, diff, prune, delete`, '\x1b[31m');
+  } catch (err) {
+    log(`Snapshot error: ${err.message}`, '\x1b[31m');
+    process.exit(1);
+  }
+}
+
+function runRollback(tagOrId) {
+  try {
+    const target = tagOrId || 'latest';
+    log(`Rolling back AI context to snapshot "${target}"...`, '\x1b[36m');
+    const result = rollbackSnapshot(CWD, target);
+    log(`✔ Successfully rolled back to snapshot "${result.restoredSnapshot.tag}" (${result.restoredSnapshot.checksum})!`);
+    if (result.backupSnapshot) {
+      log(`ℹ Pre-rollback backup saved -> tag: "${result.backupSnapshot.tag}" (${result.backupSnapshot.id})`, '\x1b[90m');
+    }
+    log('Rebuilding and synchronizing all AI agent target configurations...');
+    build();
+  } catch (err) {
+    log(`Rollback failed: ${err.message}`, '\x1b[31m');
+    process.exit(1);
+  }
+}
+
 function manageMcp(subcommand, arg1, ...restArgs) {
   const config = loadConfig();
 
@@ -711,6 +808,13 @@ A Unified Bridge for Multi-Agent AI Coding Systems
   \x1b[32mconflicts\x1b[0m (lint)  Detect semantic contradictions across agent rules (e.g. strict vs relaxed):
                 - conflicts                    : Report contradictory rule pairs
                 - conflicts --strict           : Exit with code 1 if any contradictions are found
+  \x1b[32msnapshot\x1b[0m (history) Context Versioning & Time Machine checkpoints (Phase 14):
+                - snapshot save [tag] [-m "msg"] : Capture point-in-time snapshot of current rules
+                - snapshot list                  : List all historical context snapshots
+                - snapshot diff [tag]            : Show unified diff of changes against snapshot
+                - snapshot prune [count]         : Keep latest N snapshots and purge older ones
+                - snapshot delete <tag>          : Remove a specific snapshot
+  \x1b[32mrollback\x1b[0m [tag]    Revert canonical context & auto-align all AI targets to past snapshot
   \x1b[32mhook install\x1b[0m   Install native Git pre-commit hook to guard local commits
   \x1b[32mhook uninstall\x1b[0m Remove native Git pre-commit hook
   \x1b[32mworkspaces\x1b[0m (monorepo) Manage enterprise monorepos & subpackage workspaces:
@@ -779,6 +883,15 @@ switch (command) {
   case 'conflicts':
   case 'contradictions':
     checkRulesConflicts(args.includes('--strict'));
+    break;
+  case 'snapshot':
+  case 'snapshots':
+  case 'snap':
+    manageSnapshots(args[1], args[2], ...args.slice(3));
+    break;
+  case 'rollback':
+  case 'revert':
+    runRollback(args[1]);
     break;
   case 'analyze':
   case 'tokens':

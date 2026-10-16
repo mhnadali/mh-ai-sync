@@ -258,6 +258,25 @@ node bin/index.js conflicts
 node bin/index.js conflicts --strict
 ```
 
+### 17. Context Versioning, Snapshots & Time-Machine Rollback (Phase 14)
+Capture point-in-time snapshots of AI context, view chronological history and unified diffs, and revert canonical rules with automatic pre-rollback safety checkpoints:
+```bash
+# Save a named context snapshot with custom message
+node bin/index.js snapshot save v1.0-baseline -m "Project baseline before refactor"
+
+# List all historical context snapshots (sorted newest first)
+node bin/index.js snapshot list
+
+# Diff current project guidelines against a previous snapshot (@0, @1, tag)
+node bin/index.js snapshot diff v1.0-baseline
+
+# Roll back canonical context and auto-realign all 16 AI targets immediately
+node bin/index.js rollback v1.0-baseline
+
+# Prune older checkpoints retaining only the newest N snapshots
+node bin/index.js snapshot prune 20
+```
+
 ---
 
 ## ⚙️ Configuration Schema (`mhai.config.json`)
@@ -332,13 +351,14 @@ node bin/index.js conflicts --strict
 
 ## 🧪 Testing & Verification
 
-The project includes 18 comprehensive test suites verifying functionality, edge cases, defensive sanitization, optimizer conflict resolution, and end-to-end sandbox operations:
+The project includes 19 comprehensive test suites verifying functionality, edge cases, defensive sanitization, optimizer conflict resolution, context snapshots & rollback, and end-to-end sandbox operations:
 
 ```bash
-# Run all 18 test suites (Phase 1 through 13 + Deep Audits + E2E)
+# Run all 19 test suites (Phase 1 through 14 + Deep Audits + E2E)
 npm test
 
 # Run individual test suites
+node test_phase14.js      # Context versioning, snapshots & rollback tests
 node test_phase13.js      # Context optimizer & conflict resolver tests
 node test_phase12.js      # Cline, Roo, Aider, Continue, Zed generators
 node test_deep.js         # Deep sanitization & crash-immunity tests
