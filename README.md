@@ -242,6 +242,22 @@ node bin/index.js pull org-standards
 node bin/index.js remote check org-standards
 ```
 
+### 16. AI Context Optimizer & Semantic Conflict Resolver (Phase 13)
+Analyze guidelines for contradictory rules, eliminate conversational bloat to maximize LLM reasoning bandwidth, and view compression analytics:
+```bash
+# Analyze rules for conversational bloat & preview token savings
+node bin/index.js optimize
+
+# Automatically apply compressed, imperative guidelines to mhai.config.json
+node bin/index.js optimize --apply
+
+# Check guidelines for semantic contradictions across categories
+node bin/index.js conflicts
+
+# Enforce zero contradictions in CI/CD pipelines (exits code 1 on conflict)
+node bin/index.js conflicts --strict
+```
+
 ---
 
 ## ⚙️ Configuration Schema (`mhai.config.json`)
@@ -293,8 +309,6 @@ node bin/index.js remote check org-standards
 
 ---
 
----
-
 ## 🤖 Supported AI Ecosystem Matrix
 
 | AI Assistant / Agent | Config Output Target | Format & Capabilities |
@@ -306,23 +320,29 @@ node bin/index.js remote check org-standards
 | **Legacy Cursor** | `.cursorrules` | Direct project guidelines and agent constraints |
 | **Windsurf (Cascade)** | `.windsurfrules` | Cascade workspace directives & style conventions |
 | **GitHub Copilot** | `.github/copilot-instructions.md`| Repository-level copilot instructions |
-| **Hermes / Aider / Open Standard** | `AGENTS.md` | Multi-agent universal context standard |
+| **Hermes / Open Standard** | `AGENTS.md` | Multi-agent universal context standard |
+| **Cline** | `.clinerules` | Architectural guidelines, system prompt constraints |
+| **Roo Code** | `.roomodes` | Custom modes (Architect, Code, Debug, Ask) with custom tool groups |
+| **Aider** | `CONVENTIONS.md`, `.aider.conf.yml` | Conventions transclusion, git commit formatting |
+| **Continue.dev** | `.continue/rules/project-rules.md` | Context-aware rules & system instructions |
+| **Zed Editor** | `.zed/instructions.md` | Slash command rules and assistant configuration |
 | **Model Context Protocol (MCP)** | `.mcp.json` | Protocol server declarations, arguments, and environment keys |
 
 ---
 
 ## 🧪 Testing & Verification
 
-The project includes 12 comprehensive test suites verifying functionality, edge cases, defensive sanitization, and end-to-end sandbox operations:
+The project includes 18 comprehensive test suites verifying functionality, edge cases, defensive sanitization, optimizer conflict resolution, and end-to-end sandbox operations:
 
 ```bash
-# Run all 12 test suites (Phase 1 through 8 + E2E + Deep Audit)
+# Run all 18 test suites (Phase 1 through 13 + Deep Audits + E2E)
 npm test
 
 # Run individual test suites
+node test_phase13.js      # Context optimizer & conflict resolver tests
+node test_phase12.js      # Cline, Roo, Aider, Continue, Zed generators
 node test_deep.js         # Deep sanitization & crash-immunity tests
 node test_e2e.js          # Full E2E import/export stress tests
-node test_phase8.js       # 3-Way merge & unified diff tests
 node test_audit_deep.js   # Edge-case & modular scanner tests
 ```
 

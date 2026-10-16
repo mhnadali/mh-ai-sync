@@ -17,6 +17,7 @@ const { loadTaskState, setActiveTask, addTaskNote, clearActiveTask } = require('
 const { listConfiguredServers } = require('./mcpHub');
 const { discoverWorkspaces, checkWorkspacesStatus } = require('./monorepo');
 const { listRemotes } = require('./remote');
+const { detectConflicts } = require('./optimizer');
 
 /**
  * Aggregates all project state for both TUI and Web dashboards.
@@ -39,6 +40,7 @@ function getDashboardState(rootDir = process.cwd()) {
   const workspaces = discoverWorkspaces(rootDir);
   const workspacesStatus = workspaces.length > 0 ? checkWorkspacesStatus(config, rootDir) : null;
   const remotesList = listRemotes(rootDir);
+  const conflicts = detectConflicts(config);
 
   return {
     timestamp: new Date().toISOString(),
@@ -64,6 +66,11 @@ function getDashboardState(rootDir = process.cwd()) {
       },
       duplicatesCount: (analysis.duplicates || []).length,
       recommendations: analysis.recommendations || []
+    },
+    conflicts: {
+      hasConflicts: conflicts.hasConflicts,
+      totalConflicts: conflicts.totalConflicts,
+      list: conflicts.conflicts
     },
     task: {
       activeTask: task.activeTask,
@@ -504,6 +511,19 @@ function createDashboardServer(rootDir = process.cwd(), port = 3840) {
         execSync(`node "${path.join(__dirname, '..', 'bin', 'index.js')}" pull`, { cwd: rootDir, stdio: 'ignore' });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, message: 'Pulled team standards from remote registry' }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+      return;
+    }
+
+    if (url.pathname === '/api/optimize' && req.method === 'POST') {
+      try {
+        const { execSync } = require('child_process');
+        execSync(`node "${path.join(__dirname, '..', 'bin', 'index.js')}" optimize --apply`, { cwd: rootDir, stdio: 'ignore' });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Optimized guidelines and pruned token bloat' }));
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: err.message }));

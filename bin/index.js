@@ -53,6 +53,12 @@ const {
   formatComplianceReport
 } = require('../src/remote');
 const {
+  detectConflicts,
+  optimizeContext,
+  formatConflictsReport,
+  formatOptimizationReport
+} = require('../src/optimizer');
+const {
   sanitize,
   generateClaudeMd,
   generateAgentsMd,
@@ -452,6 +458,38 @@ function analyze() {
   console.log(formatAnalysisReport(analysis));
 }
 
+function optimize(applyChanges = false) {
+  const config = loadConfig();
+  log('Running AI Context Optimization & Semantic Distillation...', '\x1b[36m');
+  const result = optimizeContext(config);
+  console.log(formatOptimizationReport(result));
+
+  if (applyChanges) {
+    if (result.stats.savedTokens > 0) {
+      const configPath = path.join(CWD, CONFIG_FILE);
+      fs.writeFileSync(configPath, JSON.stringify(result.optimizedConfig, null, 2), 'utf-8');
+      log(`✔ Applied compressed guidelines to ${CONFIG_FILE}! Saved ~${result.stats.savedTokens} tokens.`);
+      log('Compiling optimized context across all AI agent targets...');
+      build();
+    } else {
+      log('✔ Context guidelines are already optimally compressed. No changes needed.');
+    }
+  } else {
+    log('💡 Run `node bin/index.js optimize --apply` to permanently distill rules into mhai.config.json and re-align all agents.');
+  }
+}
+
+function checkRulesConflicts(strict = false) {
+  const config = loadConfig();
+  log('Scanning AI guidelines for semantic contradictions...', '\x1b[36m');
+  const conflictsResult = detectConflicts(config);
+  console.log(formatConflictsReport(conflictsResult));
+
+  if (strict && conflictsResult.hasConflicts) {
+    process.exit(1);
+  }
+}
+
 function manageMcp(subcommand, arg1, ...restArgs) {
   const config = loadConfig();
 
@@ -667,6 +705,12 @@ A Unified Bridge for Multi-Agent AI Coding Systems
   \x1b[32mstatus\x1b[0m        Check synchronization status and detect rule drift
   \x1b[32maudit\x1b[0m (lint)   Scan instructions for exposed API keys, tokens & credentials
   \x1b[32manalyze\x1b[0m (tokens) Calculate token budget consumption & prompt health score
+  \x1b[32moptimize\x1b[0m (compress) Distill guidelines & remove conversational padding to save tokens:
+                - optimize                     : Analyze potential token savings & report bloat
+                - optimize --apply             : Permanently compress guidelines in mhai.config.json & sync
+  \x1b[32mconflicts\x1b[0m (lint)  Detect semantic contradictions across agent rules (e.g. strict vs relaxed):
+                - conflicts                    : Report contradictory rule pairs
+                - conflicts --strict           : Exit with code 1 if any contradictions are found
   \x1b[32mhook install\x1b[0m   Install native Git pre-commit hook to guard local commits
   \x1b[32mhook uninstall\x1b[0m Remove native Git pre-commit hook
   \x1b[32mworkspaces\x1b[0m (monorepo) Manage enterprise monorepos & subpackage workspaces:
@@ -677,12 +721,14 @@ A Unified Bridge for Multi-Agent AI Coding Systems
                 - dashboard                : Live interactive TUI mission control in terminal
                 - dashboard --web          : Launch local dark-mode Web GUI on http://localhost:3840
                 - dashboard --snapshot     : Print static TUI snapshot and exit (ideal for scripts/CI)
-  \x1b[32mimport <src>\x1b[0m   Import from 'claude', 'cursor', or 'agents' into mhai.config.json
+  \x1b[32mimport <src>\x1b[0m   Import from 'claude', 'cursor', 'agents', 'cline', or 'aider'
   \x1b[32mhelp\x1b[0m           Show this help menu
 
 \x1b[1mOPTIONS:\x1b[0m
+  --apply       When running 'optimize', write compressed rules into mhai.config.json
+  --conflicts   When running 'audit', also perform semantic contradiction analysis
   --check       When running 'status', exit with code 1 if drift or missing files detected
-  --strict      When running 'audit', exit with code 1 if any credentials are found
+  --strict      When running 'audit' or 'conflicts', exit with code 1 if issues are found
   --redact      When running 'build', automatically redact detected secrets
   --merge       When running 'build' or 'sync', automatically merge disk edits first
   --workspaces  (or --all) Also compile or check across all monorepo workspaces
@@ -722,6 +768,17 @@ switch (command) {
   case 'audit':
   case 'lint':
     audit(args.includes('--strict'));
+    if (args.includes('--conflicts')) {
+      checkRulesConflicts(args.includes('--strict'));
+    }
+    break;
+  case 'optimize':
+  case 'compress':
+    optimize(args.includes('--apply') || args.includes('-a'));
+    break;
+  case 'conflicts':
+  case 'contradictions':
+    checkRulesConflicts(args.includes('--strict'));
     break;
   case 'analyze':
   case 'tokens':
