@@ -364,13 +364,14 @@ node bin/index.js simulate --strict
 
 ## 🧪 Testing & Verification
 
-The project includes 20 comprehensive test suites verifying functionality, edge cases, defensive sanitization, optimizer conflict resolution, context snapshots & rollback, agent simulation sandbox, and end-to-end sandbox operations:
+The project includes 21 comprehensive test suites verifying functionality, edge cases, defensive sanitization, optimizer conflict resolution, context snapshots & rollback, agent simulation sandbox, and end-to-end sandbox operations:
 
 ```bash
-# Run all 20 test suites (Phase 1 through 15 + Deep Audits + E2E)
+# Run all 21 test suites (Phase 1 through 15 + Deep Audits + E2E)
 npm test
 
 # Run individual test suites
+node test_deep_audit_v2_5.js # Deep architectural audit & bug resolution verification
 node test_phase15.js      # AI agent simulator & compliance sandbox tests
 node test_phase14.js      # Context versioning, snapshots & rollback tests
 node test_phase13.js      # Context optimizer & conflict resolver tests
